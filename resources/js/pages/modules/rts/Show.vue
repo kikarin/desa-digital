@@ -1,0 +1,81 @@
+<script setup lang="ts">
+import { useToast } from '@/components/ui/toast/useToast';
+import PageShow from '@/pages/modules/base-page/PageShow.vue';
+import { router } from '@inertiajs/vue3';
+
+const { toast } = useToast();
+
+const props = defineProps<{
+    item: {
+        id: number;
+        rw_id: number;
+        nomor_rt: string;
+        keterangan: string | null;
+        rw: {
+            id: number;
+            nomor_rw: string;
+            desa: string;
+            kecamatan: string;
+            kabupaten: string;
+        };
+        created_at: string;
+        created_by_user: {
+            id: number;
+            name: string;
+        } | null;
+        updated_at: string;
+        updated_by_user: {
+            id: number;
+            name: string;
+        } | null;
+    };
+}>();
+
+const breadcrumbs = [
+    { title: 'Data Warga', href: '#' },
+    { title: 'RT', href: '/data-warga/rts' },
+    { title: 'Detail RT', href: `/data-warga/rts/${props.item.id}` },
+];
+
+const fields = [
+    { label: 'Nomor RT', value: props.item.nomor_rt },
+    { label: 'RW', value: `${props.item.rw.nomor_rw} - ${props.item.rw.desa}, ${props.item.rw.kecamatan}, ${props.item.rw.kabupaten}` },
+    { label: 'Keterangan', value: props.item.keterangan || '-' },
+];
+
+const actionFields = [
+    { label: 'Created At', value: new Date(props.item.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
+    { label: 'Created By', value: props.item.created_by_user?.name || '-' },
+    { label: 'Updated At', value: new Date(props.item.updated_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
+    { label: 'Updated By', value: props.item.updated_by_user?.name || '-' },
+];
+
+const handleEdit = () => {
+    router.visit(`/data-warga/rts/${props.item.id}/edit`);
+};
+
+const handleDelete = () => {
+    router.delete(`/data-warga/rts/${props.item.id}`, {
+        onSuccess: () => {
+            toast({ title: 'Data berhasil dihapus', variant: 'success' });
+            router.visit('/data-warga/rts');
+        },
+        onError: () => {
+            toast({ title: 'Gagal menghapus data', variant: 'destructive' });
+        },
+    });
+};
+</script>
+
+<template>
+    <PageShow
+        title="RT"
+        :breadcrumbs="breadcrumbs"
+        :fields="fields"
+        :action-fields="actionFields"
+        :back-url="'/data-desa/rts'"
+        :on-edit="handleEdit"
+        :on-delete="handleDelete"
+    />
+</template>
+
