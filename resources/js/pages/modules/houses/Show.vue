@@ -3,7 +3,9 @@ import { useToast } from '@/components/ui/toast/useToast';
 import PageShow from '@/pages/modules/base-page/PageShow.vue';
 import { router } from '@inertiajs/vue3';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, nextTick } from 'vue';
+import GLightbox from 'glightbox';
+import 'glightbox/dist/css/glightbox.css';
 
 const { toast } = useToast();
 
@@ -48,6 +50,7 @@ const props = defineProps<{
             id: number;
             name: string;
         } | null;
+        fotos?: Array<{ id: number; url: string; name: string }>;
     };
     residents?: Array<{
         id: number;
@@ -79,9 +82,13 @@ const getJenisRumahLabel = (jenis: string): string => {
 };
 
 const fields = computed(() => {
+    const rtValue = props.item.rt?.rw 
+        ? `${props.item.rt.nomor_rt} - RW ${props.item.rt.rw.nomor_rw} - ${props.item.rt.rw.desa}, ${props.item.rt.rw.kecamatan}, ${props.item.rt.rw.kabupaten}`
+        : props.item.rt?.nomor_rt || '-';
+    
     const baseFields = [
         { label: 'Jenis Rumah', value: getJenisRumahLabel(props.item.jenis_rumah) },
-        { label: 'RT', value: `${props.item.rt.nomor_rt} - RW ${props.item.rt.rw.nomor_rw} - ${props.item.rt.rw.desa}, ${props.item.rt.rw.kecamatan}, ${props.item.rt.rw.kabupaten}` },
+        { label: 'RT', value: rtValue },
     ];
 
     if (props.item.jenis_rumah === 'RUMAH_TINGGAL') {
@@ -166,6 +173,32 @@ const calculateAge = (tanggalLahir: string): number => {
 const getJenisKelaminLabel = (jenisKelamin: string): string => {
     return jenisKelamin === 'L' ? 'Laki-laki' : jenisKelamin === 'P' ? 'Perempuan' : '-';
 };
+
+// GLightbox setup
+let lightboxInstance: any = null;
+
+onMounted(() => {
+    // Initialize GLightbox setelah component mounted dan foto ter-render
+    if (props.item.fotos && props.item.fotos.length > 0) {
+        nextTick(() => {
+            lightboxInstance = GLightbox({
+                selector: '.glightbox-trigger',
+                touchNavigation: true,
+                loop: true,
+                autoplayVideos: false,
+            });
+        });
+    }
+});
+
+onUnmounted(() => {
+    // Cleanup GLightbox
+    if (lightboxInstance) {
+        lightboxInstance.destroy();
+        lightboxInstance = null;
+    }
+});
+
 </script>
 
 <template>
@@ -179,6 +212,35 @@ const getJenisKelaminLabel = (jenisKelamin: string): string => {
         :on-delete="handleDelete"
     >
         <template #custom>
+            <!-- Gallery Foto -->
+            <div class="mt-6">
+                <h3 class="text-lg font-semibold mb-4">Foto</h3>
+                <div v-if="props.item.fotos && Array.isArray(props.item.fotos) && props.item.fotos.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <a
+                        v-for="(foto, index) in props.item.fotos"
+                        :key="foto.id || index"
+                        :href="foto.url"
+                        class="glightbox-trigger relative group cursor-pointer"
+                        :data-gallery="`gallery-${props.item.id}`"
+                    >
+                        <img
+                            :src="foto.url"
+                            :alt="foto.name || 'Foto'"
+                            class="w-full h-48 object-cover rounded-lg border hover:opacity-90 transition-opacity"
+                            loading="lazy"
+                            @error="(e: Event) => {
+                                const img = e.target as HTMLImageElement;
+                                img.style.display = 'none';
+                            }"
+                        />
+                    </a>
+                </div>
+                <div v-else class="text-center py-8 text-muted-foreground">
+                    <p>Tidak ada foto</p>
+                </div>
+            </div>
+
+            <!-- Daftar Warga -->
             <div v-if="props.residents && props.residents.length > 0" class="mt-6">
                 <h3 class="text-lg font-semibold mb-4">Daftar Warga</h3>
                 <div class="border rounded-lg overflow-hidden">

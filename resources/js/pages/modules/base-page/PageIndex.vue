@@ -35,6 +35,13 @@ const fetchData = async () => {
             order: sort.value.order,
         };
 
+        // Check URL untuk program_id (untuk backward compatibility dan filter dari URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const programIdFromUrl = urlParams.get('program_id');
+        if (programIdFromUrl && !filters.value.program_id) {
+            filters.value.program_id = parseInt(programIdFromUrl);
+        }
+
         Object.keys(filters.value).forEach((key) => {
             if (filters.value[key] !== null && filters.value[key] !== undefined && filters.value[key] !== '') {
                 params[`filter_${key}`] = filters.value[key];
@@ -88,6 +95,8 @@ const props = defineProps<{
         rt?: Array<{ value: number; label: string; rw_id?: number }>;
         jenis_rumah?: Array<{ value: string; label: string }>;
         nomor_rumah?: boolean;
+        status?: Array<{ value: number; label: string }>;
+        program?: Array<{ value: number; label: string }>;
     };
     can?: {
         Add?: boolean;
@@ -96,6 +105,8 @@ const props = defineProps<{
         Detail?: boolean;
         LoginAs?: boolean;
     };
+    hideCreateButton?: boolean;
+    createMultipleUrl?: string;
 }>();
 
 const emit = defineEmits(['search', 'update:selected']);
@@ -205,6 +216,8 @@ const handleFilterApply = (filterValues: any) => {
     if (filterValues.nomor_rumah?.value && filterValues.nomor_rumah.value.trim() !== '') {
         filters.value.nomor_rumah = filterValues.nomor_rumah.value;
     }
+    if (filterValues.status?.value) filters.value.status_id = filterValues.status.value;
+    if (filterValues.program?.value) filters.value.program_id = filterValues.program.value;
     page.value = 1;
     fetchData();
 };
@@ -240,6 +253,18 @@ const getFilterDialogProps = () => {
             value: filters.value.nomor_rumah || null,
         };
     }
+    if (props.filterOptions?.status) {
+        filterProps.status = {
+            value: filters.value.status_id || null,
+            options: props.filterOptions.status,
+        };
+    }
+    if (props.filterOptions?.program) {
+        filterProps.program = {
+            value: filters.value.program_id || null,
+            options: props.filterOptions.program,
+        };
+    }
     return filterProps;
 };
 
@@ -254,11 +279,13 @@ defineExpose({ fetchData });
                 :title="title"
                 :selected="localSelected"
                 :on-delete-selected="() => (showConfirm = true)"
-                :can-create="props.can?.Add"
+                :can-create="props.can?.Add && !props.hideCreateButton"
+                :can-create-multiple="props.can?.Add"
                 :can-delete="props.can?.Delete"
                 :show-filter="props.showFilter"
                 :on-filter-click="handleFilterClick"
-                v-bind="createUrl ? { createUrl } : {}"
+                v-bind="createUrl && !props.hideCreateButton ? { createUrl } : {}"
+                :create-multiple-url="props.createMultipleUrl"
             />
             <DataTable
                 :columns="columns"

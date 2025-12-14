@@ -10,6 +10,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use App\Repositories\RwsRepository;
 use App\Repositories\RtsRepository;
+use App\Repositories\ResidentStatusRepository;
 
 class ResidentsController extends Controller implements HasMiddleware
 {
@@ -53,6 +54,9 @@ class ResidentsController extends Controller implements HasMiddleware
         $rts = $rtsRepository->getAll([], false, false);
         $rts->load('rw');
         
+        $residentStatusRepository = app(ResidentStatusRepository::class);
+        $statuses = $residentStatusRepository->getAll([], false, false);
+        
         return response()->json([
             'data' => $data['residents'],
             'meta' => [
@@ -80,6 +84,12 @@ class ResidentsController extends Controller implements HasMiddleware
                         'value' => $rt->id,
                         'label' => $label,
                         'rw_id' => $rt->rw_id,
+                    ];
+                })->toArray(),
+                'status' => $statuses->map(function ($status) {
+                    return [
+                        'value' => $status->id,
+                        'label' => $status->name,
                     ];
                 })->toArray(),
             ],

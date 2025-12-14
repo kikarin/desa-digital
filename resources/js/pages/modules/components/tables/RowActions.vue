@@ -18,6 +18,7 @@ import {
     LogIn,
     ShieldCheck,
     UserCheck,
+    Package,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
@@ -58,7 +59,9 @@ const getIconByLabel = (label: string) => {
             return PictureInPicture;
         case 'Rekap Absen':
             return Notebook;
-        default:
+        case 'Penyaluran':
+            return Package;
+default:
             return FileText;
     }
 };

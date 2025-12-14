@@ -44,6 +44,10 @@ class ResidentsRepository
             $query->where('rts.id', request('filter_rt_id'));
         }
 
+        if (request('filter_status_id')) {
+            $query->where('residents.status_id', request('filter_status_id'));
+        }
+
         if (request('search')) {
             $searchTerm = request('search');
             $query->where(function ($q) use ($searchTerm) {

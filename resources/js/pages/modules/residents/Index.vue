@@ -53,7 +53,11 @@ const columns = [
 const selected = ref<number[]>([]);
 const pageIndex = ref();
 const { toast } = useToast();
-const filterOptions = ref<{ rw?: Array<{ value: number; label: string }>; rt?: Array<{ value: number; label: string }> }>({});
+const filterOptions = ref<{ 
+    rw?: Array<{ value: number; label: string }>; 
+    rt?: Array<{ value: number; label: string }>; 
+    status?: Array<{ value: number; label: string }>; 
+}>({});
 
 onMounted(async () => {
     try {

@@ -82,6 +82,38 @@ class UsersMenuSeeder extends Seeder
                         'urutan'        => 1,
                         'permission_id' => 'Resident Status Show',
                     ],
+                    [
+                        'nama'          => 'Item Bantuan',
+                        'kode'          => 'DATA-MASTER-ASSISTANCE-ITEMS',
+                        'url'           => '/data-master/assistance-items',
+                        'urutan'        => 2,
+                        'permission_id' => 'Assistance Items Show',
+                    ],
+                ],
+            ],
+            [
+                'nama'          => 'Program Bantuan',
+                'kode'          => 'PROGRAM-BANTUAN',
+                'url'           => '/program-bantuan',
+                'icon'          => 'HandHeart',
+                'rel'           => 0,
+                'urutan'        => 3,
+                'permission_id' => '',
+                'children'      => [
+                    [
+                        'nama'          => 'Program Bantuan',
+                        'kode'          => 'PROGRAM-BANTUAN-PROGRAM',
+                        'url'           => '/program-bantuan/program-bantuan',
+                        'urutan'        => 1,
+                        'permission_id' => 'Assistance Programs Show',
+                    ],
+                    [
+                        'nama'          => 'Penerima Bantuan',
+                        'kode'          => 'PROGRAM-BANTUAN-RECIPIENTS',
+                        'url'           => '/program-bantuan/penerima',
+                        'urutan'        => 2,
+                        'permission_id' => 'Assistance Recipients Show',
+                    ],
                 ],
             ],
             [

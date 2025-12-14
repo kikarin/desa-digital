@@ -21,7 +21,7 @@ const props = defineProps<{
     formInputs: {
         name: string;
         label: string;
-        type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multi-select' | 'number' | 'radio' | 'icon' | 'checkbox' | 'date' | 'select-or-text';
+        type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multi-select' | 'number' | 'radio' | 'icon' | 'checkbox' | 'date' | 'select-or-text' | 'multiple-file';
         placeholder?: string;
         required?: boolean;
         help?: string;
@@ -131,6 +131,91 @@ const formErrors = ref<Record<string, string>>({});
 
 const { toast } = useToast();
 
+const uploadedFiles = ref<Record<string, File[]>>({});
+const filePreviews = ref<Record<string, string[]>>({});
+const existingMedia = ref<Record<string, Array<{ id: number; url: string; name: string }>>>({});
+const fileInputKeys = ref<Record<string, number>>({});
+
+// Initialize existing media dari initialData
+watch(() => props.initialData, (newData: Record<string, any> | undefined) => {
+    if (newData) {
+        getFormInputs.value.forEach((input: any) => {
+            if (input.type === 'multiple-file' && newData[input.name]) {
+                let fotos = Array.isArray(newData[input.name]) 
+                    ? newData[input.name] 
+                    : [];
+                
+                // Jika fotos adalah array of strings (path), convert ke format object
+                if (fotos.length > 0 && typeof fotos[0] === 'string') {
+                    fotos = fotos.map((path: string, index: number) => ({
+                        id: index,
+                        url: path.startsWith('http') ? path : `/storage/${path}`,
+                        name: path.split('/').pop() || 'Foto',
+                    }));
+                }
+                
+                existingMedia.value[input.name] = fotos;
+            }
+        });
+    }
+}, { immediate: true, deep: true });
+
+const handleFileSelect = (event: Event, fieldName: string) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        const files = Array.from(target.files);
+        
+        if (!uploadedFiles.value[fieldName]) {
+            uploadedFiles.value[fieldName] = [];
+        }
+        
+        files.forEach((file) => {
+            if (file.type.startsWith('image/')) {
+                uploadedFiles.value[fieldName].push(file);
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    if (!filePreviews.value[fieldName]) {
+                        filePreviews.value[fieldName] = [];
+                    }
+                    filePreviews.value[fieldName].push(e.target?.result as string);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Reset input dengan increment key untuk force re-render
+        nextTick(() => {
+            fileInputKeys.value[fieldName] = (fileInputKeys.value[fieldName] || 0) + 1;
+        });
+    }
+};
+
+const removeFile = (fieldName: string, index: number) => {
+    if (uploadedFiles.value[fieldName]) {
+        uploadedFiles.value[fieldName].splice(index, 1);
+        if (filePreviews.value[fieldName]) {
+            filePreviews.value[fieldName].splice(index, 1);
+        }
+    }
+};
+
+const removeExistingMedia = (fieldName: string, mediaId: number) => {
+    if (!form.deleted_media_ids) {
+        form.deleted_media_ids = [];
+    }
+    if (!form.deleted_media_ids.includes(mediaId)) {
+        form.deleted_media_ids.push(mediaId);
+    }
+    
+    if (existingMedia.value[fieldName]) {
+        existingMedia.value[fieldName] = existingMedia.value[fieldName].filter(
+            (media) => media.id !== mediaId
+        );
+    }
+};
+
 const handleSubmit = (e: Event) => {
     e.preventDefault();
     formErrors.value = {}; // reset error sebelum submit
@@ -139,7 +224,7 @@ const handleSubmit = (e: Event) => {
     let isValid = true;
     const localErrors: Record<string, string> = {};
     getFormInputs.value.forEach((input: any) => {
-        if (input.required && !form[input.name]) {
+        if (input.required && input.type !== 'multiple-file' && !form[input.name]) {
             isValid = false;
             localErrors[input.name] = `${input.label} wajib diisi`;
         }
@@ -147,9 +232,16 @@ const handleSubmit = (e: Event) => {
 
     if (!isValid) {
         toast({ title: 'Data is not valid', variant: 'destructive' });
-        formErrors.value = localErrors; // <-- tampilkan alert error juga
+        formErrors.value = localErrors;
         return;
     }
+
+    // Attach files to form
+    getFormInputs.value.forEach((input: any) => {
+        if (input.type === 'multiple-file' && uploadedFiles.value[input.name]) {
+            form[input.name] = uploadedFiles.value[input.name];
+        }
+    });
 
     emit('save', form, setFormErrors);
 };
@@ -582,6 +674,72 @@ const getFilteredOptions = (input: any) => {
                             </Calendar>
                         </PopoverContent>
                     </Popover>
+
+                    <!-- MULTIPLE FILE UPLOAD -->
+                    <div v-else-if="input.type === 'multiple-file'" class="space-y-4">
+                        <div class="flex items-center gap-2">
+                            <Input
+                                :key="`file-input-${input.name}-${fileInputKeys[input.name] || 0}`"
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                @change="(e: Event) => handleFileSelect(e, input.name)"
+                                class="flex-1"
+                            />
+                        </div>
+                        
+                        <!-- Preview Existing Media -->
+                        <div v-if="existingMedia[input.name] && existingMedia[input.name].length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div
+                                v-for="media in existingMedia[input.name]"
+                                :key="media.id"
+                                class="relative group"
+                            >
+                                <img
+                                    :src="media.url"
+                                    :alt="media.name"
+                                    class="w-full h-32 object-cover rounded-md border"
+                                    @error="(e: Event) => {
+                                        const img = e.target as HTMLImageElement;
+                                        img.style.display = 'none';
+                                    }"
+                                />
+                                <button
+                                    type="button"
+                                    @click="removeExistingMedia(input.name, media.id)"
+                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview New Files -->
+                        <div v-if="filePreviews[input.name] && filePreviews[input.name].length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div
+                                v-for="(preview, index) in filePreviews[input.name]"
+                                :key="index"
+                                class="relative group"
+                            >
+                                <img
+                                    :src="preview"
+                                    alt="Preview"
+                                    class="w-full h-32 object-cover rounded-md border"
+                                />
+                                <button
+                                    type="button"
+                                    @click="removeFile(input.name, index)"
+                                    class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <X class="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <p v-if="input.help" class="text-muted-foreground text-sm">
+                            {{ input.help }}
+                        </p>
+                    </div>
 
                     <!-- DEFAULT INPUT (text, email, number) -->
                     <Input 

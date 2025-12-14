@@ -65,6 +65,23 @@ class CategoryPermissionSeeder extends Seeder
                 'name'       => 'Residents',
                 'permission' => 'CRUD',
             ],
+            [
+                'name'              => 'Assistance Programs',
+                'permission'        => 'CRUD',
+                'permission_common' => ['Assistance Programs penyaluran'],
+            ],
+            [
+                'name'       => 'Assistance Items',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Assistance Program Items',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Assistance Recipients',
+                'permission' => 'CRUD',
+            ],
         ];
 
         $listCrud = ['Show', 'Add', 'Edit', 'Detail', 'Delete'];

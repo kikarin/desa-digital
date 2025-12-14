@@ -22,14 +22,23 @@ export function useHandleFormSave() {
             toast({ title: fallbackMessage, variant: 'destructive' });
             return;
         }
+        
+        // Check apakah ada error message umum (bukan field-specific)
+        if (errors.message) {
+            toast({ title: errors.message, variant: 'destructive' });
+            return;
+        }
+        
         // Jika ada setFormErrors, lempar error ke form
         if (setFormErrors) {
             setFormErrors(errors);
         } else {
             // Fallback: tetap pakai toast jika tidak ada handler
             Object.entries(errors).forEach(([field, message]) => {
+                // Skip jika message adalah array (validation error)
+                const errorMessage = Array.isArray(message) ? message[0] : message;
                 toast({
-                    title: `${field}: ${message}`,
+                    title: errorMessage || `${field}: ${errorMessage}`,
                     variant: 'destructive',
                 });
             });

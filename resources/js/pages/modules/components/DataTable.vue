@@ -60,7 +60,7 @@ const selectLabel = computed(() => {
             </div>
 
             <!-- Search (selalu tampil di kanan) -->
-            <div v-if="!props.hideSearch" class="w-full sm:w-64">
+            <div v-if="!props.hideSearch" class="w-full bg-card sm:w-64">
                 <Input :model-value="props.search" @update:model-value="(val) => emit('update:search', val)" placeholder="Search..." class="w-full" />
             </div>
         </div>
@@ -102,7 +102,12 @@ const selectLabel = computed(() => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow v-for="(row, index) in props.rows" :key="index" class="hover:bg-muted/40 border-t transition">
+                        <TableRow 
+                            v-for="(row, index) in props.rows" 
+                            :key="index" 
+                            class="hover:bg-muted/40 border-t transition"
+                            :data-row-index="index"
+                        >
                             <TableCell class="text-center text-xs sm:text-sm px-2 sm:px-4 whitespace-normal break-words">
                                 {{ (props.page - 1) * props.perPage + index + 1 }}
                             </TableCell>

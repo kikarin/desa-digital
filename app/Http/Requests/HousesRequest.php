@@ -14,9 +14,15 @@ class HousesRequest extends FormRequest
 
     public function rules(): array
     {
+        $maxFileSizeInMB = (int) (config('media-library.max_file_size', 10240) / 1024);
+        
         $rules = [
             'rt_id'       => 'required|exists:rts,id',
             'jenis_rumah' => 'required|in:RUMAH_TINGGAL,KONTRAKAN,WARUNG_TOKO_USAHA,FASILITAS_UMUM',
+            'fotos'       => 'nullable|array',
+            'fotos.*'     => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,bmp,svg|max:' . $maxFileSizeInMB,
+            'deleted_media_ids' => 'nullable|array',
+            'deleted_media_ids.*' => 'nullable|integer',
         ];
 
         $jenisRumah = $this->jenis_rumah;

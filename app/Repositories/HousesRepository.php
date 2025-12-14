@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Houses;
 use App\Traits\RepositoryTrait;
 use App\Repositories\RtsRepository;
+use Illuminate\Support\Facades\Storage;
 
 class HousesRepository
 {
@@ -23,7 +24,7 @@ class HousesRepository
         $query = $this->model->with(['rt.rw', 'families.residents' => function ($query) {
             $query->with('status');
         }])
-            ->select('houses.id', 'houses.rt_id', 'houses.nomor_rumah', 'houses.jenis_rumah', 'houses.keterangan', 
+            ->select('houses.id', 'houses.rt_id', 'houses.nomor_rumah', 'houses.jenis_rumah', 'houses.keterangan', 'houses.fotos',
                      'rts.nomor_rt', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
             ->leftJoin('rts', 'houses.rt_id', '=', 'rts.id')
             ->leftJoin('rws', 'rts.rw_id', '=', 'rws.id');
@@ -99,6 +100,7 @@ class HousesRepository
                     'kabupaten'  => $house->kabupaten,
                     'keterangan' => $house->keterangan,
                     'total_residents' => $totalResidents,
+                    'foto_url' => $this->getFirstFotoUrl($house),
                 ];
             });
 
@@ -141,10 +143,11 @@ class HousesRepository
                 'desa'        => $house->desa,
                 'kecamatan'   => $house->kecamatan,
                 'kabupaten'  => $house->kabupaten,
-                'keterangan' => $house->keterangan,
-                'total_residents' => $totalResidents,
-            ];
-        });
+                    'keterangan' => $house->keterangan,
+                    'total_residents' => $totalResidents,
+                    'foto_url' => $this->getFirstFotoUrl($house),
+                ];
+            });
 
         $data += [
             'houses' => $transformedHouses,
@@ -158,6 +161,14 @@ class HousesRepository
             ],
         ];
 
+        return $data;
+    }
+
+    public function customDataCreateUpdate($data, $record = null)
+    {
+        // Hapus fotos dan deleted_media_ids dari data karena akan di-handle di callbackAfterStoreOrUpdate
+        unset($data['fotos']);
+        unset($data['deleted_media_ids']);
         return $data;
     }
 
@@ -191,6 +202,13 @@ class HousesRepository
             })->toArray(),
         ];
 
+        // Load fotos untuk edit
+        if ($item) {
+            // Reload item untuk memastikan fotos ter-load
+            $item->refresh();
+            $data['fotos'] = $this->getFotosArray($item);
+        }
+
         return $data;
     }
 
@@ -198,12 +216,25 @@ class HousesRepository
     {
         if ($item) {
             $item->load([
+                'rt.rw', // Pastikan rt.rw ter-load
                 'families.residents' => function ($query) {
                     $query->with('status');
                 }, 
                 'families.kepala_keluarga',
                 'pemilik'
             ]);
+            
+            // Reload item untuk memastikan fotos ter-load
+            $item->refresh();
+            
+            // Load fotos untuk show - pastikan ter-pass ke item juga
+            $fotos = $this->getFotosArray($item);
+            $data['fotos'] = $fotos;
+            
+            // Pastikan item juga punya fotos untuk kompatibilitas
+            if (isset($data['item']) && is_object($data['item'])) {
+                $data['item']->fotos = $fotos;
+            }
             
             $residents = [];
             foreach ($item->families as $family) {
@@ -226,6 +257,121 @@ class HousesRepository
         }
         
         return $data;
+    }
+
+    /**
+     * Helper method untuk mendapatkan array fotos
+     */
+    private function getFotosArray($item)
+    {
+        $fotos = [];
+        if (!empty($item->fotos) && is_array($item->fotos)) {
+            $fotos = array_map(function($path, $index) {
+                // Pastikan path valid dan file exists
+                $fileExists = Storage::disk('public')->exists($path);
+                
+                // Gunakan asset() helper yang lebih reliable untuk generate URL
+                // asset() akan menggunakan APP_URL dari config
+                $url = $fileExists ? asset('storage/' . $path) : null;
+                
+                return [
+                    'id' => $index, // Gunakan index sebagai ID untuk kompatibilitas dengan frontend (untuk delete)
+                    'url' => $url,
+                    'name' => basename($path),
+                ];
+            }, array_filter($item->fotos), array_keys(array_filter($item->fotos)));
+        }
+        return $fotos;
+    }
+
+    /**
+     * Helper method untuk mendapatkan URL foto pertama (untuk thumbnail di index)
+     */
+    private function getFirstFotoUrl($house)
+    {
+        if (!empty($house->fotos) && is_array($house->fotos) && count($house->fotos) > 0) {
+            $firstFoto = $house->fotos[0];
+            if (Storage::disk('public')->exists($firstFoto)) {
+                return asset('storage/' . $firstFoto);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Handle upload dan delete foto setelah store/update
+     */
+    public function callbackAfterStoreOrUpdate($model, $data, $method = 'store', $record_sebelumnya = null)
+    {
+        $request = request();
+        
+        // Handle upload multiple foto
+        // Cek apakah ada file dengan nama fotos atau fotos[]
+        if ($request->hasFile('fotos')) {
+            $fotos = $request->file('fotos');
+            // Jika hanya 1 file, wrap dalam array
+            if (!is_array($fotos)) {
+                $fotos = [$fotos];
+            }
+            
+            $fotoPaths = $model->fotos ?? [];
+            
+            foreach ($fotos as $foto) {
+                if ($foto && $foto->isValid()) {
+                    try {
+                        // Simpan di storage/app/public/houses/{house_id}/
+                        $path = $foto->store('houses/' . $model->id, 'public');
+                        if ($path) {
+                            $fotoPaths[] = $path;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Error storing foto: ' . $e->getMessage());
+                    }
+                }
+            }
+            
+            if (!empty($fotoPaths)) {
+                $model->update(['fotos' => $fotoPaths]);
+            }
+        } elseif ($request->hasFile('fotos.0')) {
+            // Handle jika file dikirim sebagai array fotos[0], fotos[1], etc
+            $fotoPaths = $model->fotos ?? [];
+            $index = 0;
+            while ($request->hasFile("fotos.$index")) {
+                $foto = $request->file("fotos.$index");
+                if ($foto && $foto->isValid()) {
+                    try {
+                        $path = $foto->store('houses/' . $model->id, 'public');
+                        if ($path) {
+                            $fotoPaths[] = $path;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::error('Error storing foto: ' . $e->getMessage());
+                    }
+                }
+                $index++;
+            }
+            if (!empty($fotoPaths)) {
+                $model->update(['fotos' => $fotoPaths]);
+            }
+        }
+
+        // Handle delete foto yang dipilih
+        $deletedMediaIds = $request->input('deleted_media_ids', []);
+        if (is_array($deletedMediaIds) && !empty($deletedMediaIds)) {
+            $fotoPaths = $model->fotos ?? [];
+            foreach ($deletedMediaIds as $index) {
+                if (isset($fotoPaths[$index])) {
+                    // Hapus file dari storage
+                    Storage::disk('public')->delete($fotoPaths[$index]);
+                    unset($fotoPaths[$index]);
+                }
+            }
+            // Re-index array setelah delete
+            $model->update(['fotos' => array_values($fotoPaths)]);
+        }
+
+        return $model;
     }
 }
 

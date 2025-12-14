@@ -14,6 +14,10 @@ use App\Http\Controllers\HousesController;
 use App\Http\Controllers\ResidentStatusController;
 use App\Http\Controllers\FamiliesController;
 use App\Http\Controllers\ResidentsController;
+use App\Http\Controllers\AssistanceProgramsController;
+use App\Http\Controllers\AssistanceItemsController;
+use App\Http\Controllers\AssistanceProgramItemsController;
+use App\Http\Controllers\AssistanceRecipientsController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -103,6 +107,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/data-master/resident-statuses/destroy-selected', [ResidentStatusController::class, 'destroy_selected'])->name('resident-statuses.destroy_selected');
 });
 
+// Assistance Items Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/data-master/assistance-items', AssistanceItemsController::class)->names('assistance-items');
+    Route::get('/api/assistance-items', [AssistanceItemsController::class, 'apiIndex']);
+    Route::post('/data-master/assistance-items/destroy-selected', [AssistanceItemsController::class, 'destroy_selected'])->name('assistance-items.destroy_selected');
+});
+
 // Families Routes
 Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('/data-warga/families', FamiliesController::class)->names('families');
@@ -117,6 +128,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-warga/residents', ResidentsController::class)->names('residents');
     Route::get('/api/residents', [ResidentsController::class, 'apiIndex']);
     Route::post('/data-warga/residents/destroy-selected', [ResidentsController::class, 'destroy_selected'])->name('residents.destroy_selected');
+});
+
+// Assistance Programs Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/program-bantuan/penyaluran', [AssistanceProgramsController::class, 'distribution'])->name('assistance-programs.distribution');
+    Route::resource('/program-bantuan/program-bantuan', AssistanceProgramsController::class)->names('assistance-programs');
+    Route::get('/api/assistance-programs', [AssistanceProgramsController::class, 'apiIndex']);
+    Route::get('/api/assistance-recipients/distribution', [AssistanceProgramsController::class, 'apiDistribution']);
+    Route::get('/api/assistance-recipients/{id}/family-residents', [AssistanceProgramsController::class, 'getFamilyResidents']);
+    Route::put('/api/assistance-recipients/{id}/distribution', [AssistanceProgramsController::class, 'updateDistribution']);
+    Route::post('/program-bantuan/program-bantuan/destroy-selected', [AssistanceProgramsController::class, 'destroy_selected'])->name('assistance-programs.destroy_selected');
+});
+
+// Assistance Program Items Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/program-bantuan/item-program', AssistanceProgramItemsController::class)->names('assistance-program-items');
+    Route::get('/api/assistance-program-items', [AssistanceProgramItemsController::class, 'apiIndex']);
+    Route::post('/program-bantuan/item-program/destroy-selected', [AssistanceProgramItemsController::class, 'destroy_selected'])->name('assistance-program-items.destroy_selected');
+});
+
+// Assistance Recipients Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Route create-multiple harus diletakkan SEBELUM resource route agar tidak konflik
+    Route::get('/program-bantuan/penerima/create-multiple', [AssistanceRecipientsController::class, 'createMultiple'])->name('assistance-recipients.create-multiple');
+    Route::post('/program-bantuan/penerima/store-multiple', [AssistanceRecipientsController::class, 'storeMultiple'])->name('assistance-recipients.store-multiple');
+    Route::resource('/program-bantuan/penerima', AssistanceRecipientsController::class)->names('assistance-recipients');
+    Route::get('/api/assistance-recipients', [AssistanceRecipientsController::class, 'apiIndex']);
+    Route::get('/api/assistance-recipients/available-families', [AssistanceRecipientsController::class, 'getAvailableFamilies']);
+    Route::get('/api/assistance-recipients/available-residents', [AssistanceRecipientsController::class, 'getAvailableResidents']);
+    Route::post('/program-bantuan/penerima/destroy-selected', [AssistanceRecipientsController::class, 'destroy_selected'])->name('assistance-recipients.destroy_selected');
 });
 
 require __DIR__ . '/settings.php';

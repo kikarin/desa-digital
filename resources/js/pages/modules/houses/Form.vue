@@ -2,9 +2,11 @@
 import { useHandleFormSave } from '@/composables/useHandleFormSave';
 import FormInput from '@/pages/modules/base-page/FormInput.vue';
 import { computed, ref, watch } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { useForm, router } from '@inertiajs/vue3';
+import { useToast } from '@/components/ui/toast/useToast';
 
 const { save } = useHandleFormSave();
+const { toast } = useToast();
 
 const props = defineProps<{
     mode: 'create' | 'edit';
@@ -19,6 +21,7 @@ const residentsOptions = computed(() => props.listResidents || []);
 const getInitialFormData = () => {
     const data: Record<string, any> = {
         jenis_rumah: props.initialData?.jenis_rumah || null,
+        deleted_media_ids: [], // Initialize deleted_media_ids
     };
     
     if (props.initialData) {
@@ -33,6 +36,11 @@ const getInitialFormData = () => {
         if (props.initialData.nama_pengelola) {
             data.pengelola_id = null;
             data.pengelola = props.initialData.nama_pengelola;
+        }
+        
+        // Include fotos dari initialData
+        if (props.initialData.fotos) {
+            data.fotos = props.initialData.fotos;
         }
     }
     
@@ -58,7 +66,7 @@ const formInputs = computed(() => {
     const baseInputs: Array<{
         name: string;
         label: string;
-        type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multi-select' | 'number' | 'radio' | 'icon' | 'checkbox' | 'date' | 'select-or-text';
+        type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multi-select' | 'number' | 'radio' | 'icon' | 'checkbox' | 'date' | 'select-or-text' | 'multiple-file';
         placeholder?: string;
         required?: boolean;
         options?: { value: string | number; label: string }[];
@@ -81,6 +89,15 @@ const formInputs = computed(() => {
     if (!selectedJenisRumah.value) {
         return baseInputs;
     }
+
+    // Field foto untuk semua jenis rumah
+    const fotoField = {
+        name: 'fotos',
+        label: 'Foto',
+        type: 'multiple-file' as const,
+        placeholder: 'Pilih foto (bisa lebih dari 1)',
+        required: false,
+    };
 
     if (selectedJenisRumah.value === 'RUMAH_TINGGAL') {
         baseInputs.push(
@@ -107,6 +124,7 @@ const formInputs = computed(() => {
                 required: false,
                 options: residentsOptions.value.map(opt => ({ value: opt.value, label: opt.label })),
             },
+            fotoField,
             {
                 name: 'keterangan',
                 label: 'Keterangan',
@@ -153,6 +171,7 @@ const formInputs = computed(() => {
                     { value: 'KOSONG', label: 'Kosong' },
                 ],
             },
+            fotoField,
             {
                 name: 'keterangan',
                 label: 'Keterangan',
@@ -202,6 +221,7 @@ const formInputs = computed(() => {
                 placeholder: 'Jenis usaha (opsional)',
                 required: false,
             },
+            fotoField,
             {
                 name: 'keterangan',
                 label: 'Keterangan',
@@ -248,6 +268,7 @@ const formInputs = computed(() => {
                     { value: 'DINAS', label: 'Dinas' },
                 ],
             },
+            fotoField,
             {
                 name: 'keterangan',
                 label: 'Keterangan',
@@ -317,14 +338,61 @@ const handleSave = (data: Record<string, any>) => {
         formData.id = props.initialData.id;
     }
 
-    save(formData, {
-        url: '/data-warga/houses',
-        mode: props.mode,
-        id: props.initialData?.id,
-        redirectUrl: '/data-warga/houses',
-        successMessage: props.mode === 'create' ? 'Data berhasil ditambahkan' : 'Data berhasil diperbarui',
-        errorMessage: 'Gagal menyimpan data',
+    // Selalu gunakan FormData untuk memastikan file dan deleted_media_ids ter-handle dengan benar
+    const formDataToSend = new FormData();
+    
+    Object.keys(formData).forEach((key) => {
+        if (key === 'fotos' && Array.isArray(formData[key]) && formData[key].length > 0) {
+            formData[key].forEach((file: File) => {
+                // Pastikan ini adalah File object, bukan string atau object lain
+                if (file instanceof File) {
+                    formDataToSend.append('fotos[]', file);
+                }
+            });
+        } else if (key === 'deleted_media_ids' && Array.isArray(formData[key]) && formData[key].length > 0) {
+            formData[key].forEach((id: number) => {
+                if (id !== null && id !== undefined) {
+                    formDataToSend.append('deleted_media_ids[]', id.toString());
+                }
+            });
+        } else if (formData[key] !== null && formData[key] !== undefined && key !== 'fotos' && key !== 'deleted_media_ids') {
+            // Convert value to string untuk FormData
+            const value = formData[key];
+            if (typeof value === 'object' && !(value instanceof File)) {
+                formDataToSend.append(key, JSON.stringify(value));
+            } else {
+                formDataToSend.append(key, value);
+            }
+        }
     });
+
+    // Gunakan router.post dengan FormData
+    if (props.mode === 'create') {
+        router.post('/data-warga/houses', formDataToSend, {
+            forceFormData: true,
+            onSuccess: () => {
+                toast({ title: 'Data berhasil ditambahkan', variant: 'success' });
+                router.visit('/data-warga/houses');
+            },
+            onError: (errors) => {
+                console.error('Error:', errors);
+                toast({ title: 'Gagal menyimpan data', variant: 'destructive' });
+            },
+        });
+    } else {
+        formDataToSend.append('_method', 'PUT');
+        router.post(`/data-warga/houses/${props.initialData?.id}`, formDataToSend, {
+            forceFormData: true,
+            onSuccess: () => {
+                toast({ title: 'Data berhasil diperbarui', variant: 'success' });
+                router.visit('/data-warga/houses');
+            },
+            onError: (errors) => {
+                console.error('Error:', errors);
+                toast({ title: 'Gagal menyimpan data', variant: 'destructive' });
+            },
+        });
+    }
 };
 </script>
 

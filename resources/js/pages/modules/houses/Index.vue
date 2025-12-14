@@ -23,6 +23,21 @@ const columns = [
     { key: 'nomor_rumah', label: 'Nomor Rumah', searchable: true, orderable: true, visible: true },
     { key: 'jenis_rumah', label: 'Jenis Rumah', searchable: true, orderable: true, visible: true },
     {
+        key: 'foto',
+        label: 'Foto',
+        searchable: false,
+        orderable: false,
+        visible: true,
+        format: (row: any) => {
+            if (row.foto_url) {
+                return `<a href="${row.foto_url}" target="_blank" class="inline-block cursor-pointer hover:opacity-80 transition-opacity" title="Klik untuk melihat foto">
+                    <img src="${row.foto_url}" alt="Foto" class="w-12 h-12 object-cover rounded" />
+                </a>`;
+            }
+            return '<span class="text-muted-foreground">-</span>';
+        },
+    },
+    {
         key: 'total_residents',
         label: 'Jumlah Warga',
         searchable: false,

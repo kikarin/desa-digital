@@ -13,6 +13,8 @@ const props = defineProps<{
         rt?: { value: number | null; options: Array<{ value: number; label: string; rw_id?: number }> };
         jenis_rumah?: { value: string | null; options: Array<{ value: string; label: string }> };
         nomor_rumah?: { value: string | null };
+        status?: { value: number | string | null; options: Array<{ value: number | string; label: string }> };
+        program?: { value: number | null; options: Array<{ value: number; label: string }> };
     };
 }>();
 
@@ -61,6 +63,8 @@ const handleReset = () => {
     if (props.filters.rt) resetFilters.rt = { value: null, options: props.filters.rt.options };
     if (props.filters.jenis_rumah) resetFilters.jenis_rumah = { value: null, options: props.filters.jenis_rumah.options };
     if (props.filters.nomor_rumah) resetFilters.nomor_rumah = { value: null };
+    if (props.filters.status) resetFilters.status = { value: null, options: props.filters.status.options };
+    if (props.filters.program) resetFilters.program = { value: null, options: props.filters.program.options };
     localFilters.value = resetFilters;
     emit('reset', resetFilters);
     emit('update:open', false);
@@ -152,6 +156,57 @@ const handleReset = () => {
                         type="text"
                         placeholder="Masukkan nomor rumah"
                     />
+                </div>
+
+                <div v-if="localFilters.status" class="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                        :model-value="localFilters.status.value ? String(localFilters.status.value) : 'all'"
+                        @update:model-value="(val: string) => {
+                            if (val && val !== 'all') {
+                                const option = localFilters.status!.options.find((opt: any) => String(opt.value) === val);
+                                localFilters.status!.value = option ? option.value : null;
+                            } else {
+                                localFilters.status!.value = null;
+                            }
+                        }"
+                    >
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Pilih Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua Status</SelectItem>
+                            <SelectItem
+                                v-for="option in localFilters.status.options"
+                                :key="option.value"
+                                :value="String(option.value)"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div v-if="localFilters.program" class="space-y-2">
+                    <Label>Program Bantuan</Label>
+                    <Select
+                        :model-value="localFilters.program.value ? String(localFilters.program.value) : 'all'"
+                        @update:model-value="(val: string) => localFilters.program!.value = val && val !== 'all' ? Number(val) : null"
+                    >
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Pilih Program Bantuan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua Program</SelectItem>
+                            <SelectItem
+                                v-for="option in localFilters.program.options"
+                                :key="option.value"
+                                :value="String(option.value)"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
 

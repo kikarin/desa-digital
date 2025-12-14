@@ -6,9 +6,11 @@ import { Filter } from 'lucide-vue-next';
 const props = defineProps<{
     title: string;
     createUrl?: string;
+    createMultipleUrl?: string;
     selected: number[];
     onDeleteSelected: () => void;
     canCreate?: boolean;
+    canCreateMultiple?: boolean;
     canDelete?: boolean;
     showFilter?: boolean;
     onFilterClick?: () => void;
@@ -34,6 +36,10 @@ const props = defineProps<{
 
             <Link v-if="props.createUrl && props.canCreate !== false" :href="props.createUrl">
                 <Button variant="outline" size="sm">+ Create</Button>
+            </Link>
+
+            <Link v-if="props.createMultipleUrl && props.canCreateMultiple !== false" :href="props.createMultipleUrl">
+                <Button variant="outline" size="sm">+ Create Multiple</Button>
             </Link>
 
             <Button 

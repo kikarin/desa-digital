@@ -35,6 +35,11 @@ class Houses extends Model
         'jenis_usaha',
         'nama_fasilitas',
         'pengelola',
+        'fotos',
+    ];
+
+    protected $casts = [
+        'fotos' => 'array',
     ];
 
     public function getActivitylogOptions(): LogOptions
