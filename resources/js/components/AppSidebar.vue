@@ -40,6 +40,12 @@ const iconMap: Record<string, any> = {
     ShieldCheck: LucideIcons.ShieldCheck,
     BookUser: LucideIcons.BookUser,
     House: LucideIcons.House,
+    Newspaper: LucideIcons.Newspaper,
+    Recycle: LucideIcons.Recycle || LucideIcons.Trash2,
+    AlertCircle: LucideIcons.AlertCircle,
+    MessageSquare: LucideIcons.MessageSquare,
+    Phone: LucideIcons.Phone,
+    PhoneCall: LucideIcons.PhoneCall,
 };
 
 const fetchMenus = async () => {

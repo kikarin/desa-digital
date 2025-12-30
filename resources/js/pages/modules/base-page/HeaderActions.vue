@@ -14,6 +14,7 @@ const props = defineProps<{
     canDelete?: boolean;
     showFilter?: boolean;
     onFilterClick?: () => void;
+    canDeleteSelected?: boolean;
 }>();
 </script>
 
@@ -35,7 +36,7 @@ const props = defineProps<{
             </Button>
 
             <Link v-if="props.createUrl && props.canCreate !== false" :href="props.createUrl">
-                <Button variant="outline" size="sm">+ Create</Button>
+                <Button variant="secondary" size="sm">+ Create</Button>
             </Link>
 
             <Link v-if="props.createMultipleUrl && props.canCreateMultiple !== false" :href="props.createMultipleUrl">
@@ -43,7 +44,7 @@ const props = defineProps<{
             </Link>
 
             <Button 
-                v-if="props.canDelete !== false"
+                v-if="props.canDelete !== false && props.canDeleteSelected !== true"
                 variant="destructive" 
                 size="sm" 
                 :disabled="selected.length === 0" 

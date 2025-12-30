@@ -84,6 +84,10 @@ class FamiliesController extends Controller implements HasMiddleware
                     ];
                 })->toArray(),
                 'nomor_rumah' => true,
+                'status_bantuan' => [
+                    ['value' => 'received', 'label' => 'Sudah Menerima Bantuan'],
+                    ['value' => 'not_received', 'label' => 'Belum Menerima Bantuan'],
+                ],
             ],
         ]);
     }

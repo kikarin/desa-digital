@@ -80,7 +80,22 @@ class UsersController extends Controller implements HasMiddleware
         $user = User::create($data);
         if (isset($data['role_id'])) {
             $user->roles()->sync($data['role_id']);
-            app(UsersRoleRepository::class)->setRole($user->id, $data['role_id']);
+            
+            // Prepare role data dengan rw_id dan rt_id
+            $roleData = [];
+            foreach ($data['role_id'] as $roleId) {
+                $roleData[$roleId] = [];
+                // Jika role adalah RW (35), tambahkan rw_id
+                if ($roleId == 35 && isset($data['rw_id'])) {
+                    $roleData[$roleId]['rw_id'] = $data['rw_id'];
+                }
+                // Jika role adalah RT (36), tambahkan rt_id
+                if ($roleId == 36 && isset($data['rt_id'])) {
+                    $roleData[$roleId]['rt_id'] = $data['rt_id'];
+                }
+            }
+            
+            app(UsersRoleRepository::class)->setRole($user->id, $data['role_id'], $roleData);
         }
         return redirect()->route('users.index')->with('success', 'User berhasil ditambahkan!');
     }
@@ -97,7 +112,22 @@ class UsersController extends Controller implements HasMiddleware
         $user->update($data);
         if (isset($data['role_id'])) {
             $user->roles()->sync($data['role_id']);
-            app(UsersRoleRepository::class)->setRole($user->id, $data['role_id']);
+            
+            // Prepare role data dengan rw_id dan rt_id
+            $roleData = [];
+            foreach ($data['role_id'] as $roleId) {
+                $roleData[$roleId] = [];
+                // Jika role adalah RW (35), tambahkan rw_id
+                if ($roleId == 35 && isset($data['rw_id'])) {
+                    $roleData[$roleId]['rw_id'] = $data['rw_id'];
+                }
+                // Jika role adalah RT (36), tambahkan rt_id
+                if ($roleId == 36 && isset($data['rt_id'])) {
+                    $roleData[$roleId]['rt_id'] = $data['rt_id'];
+                }
+            }
+            
+            app(UsersRoleRepository::class)->setRole($user->id, $data['role_id'], $roleData);
         }
         return redirect()->route('users.index')->with('success', 'User berhasil diperbarui!');
     }

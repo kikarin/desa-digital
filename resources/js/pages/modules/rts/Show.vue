@@ -29,6 +29,12 @@ const props = defineProps<{
             name: string;
         } | null;
     };
+    has_account?: boolean;
+    user_account?: {
+        id: number;
+        name: string;
+        email: string;
+    } | null;
 }>();
 
 const breadcrumbs = [
@@ -42,6 +48,13 @@ const fields = [
     { label: 'RW', value: `${props.item.rw.nomor_rw} - ${props.item.rw.desa}, ${props.item.rw.kecamatan}, ${props.item.rw.kabupaten}` },
     { label: 'Keterangan', value: props.item.keterangan || '-' },
 ];
+
+if (props.has_account && props.user_account) {
+    fields.push(
+        { label: 'Nama User', value: props.user_account.name },
+        { label: 'Email User', value: props.user_account.email }
+    );
+}
 
 const actionFields = [
     { label: 'Created At', value: new Date(props.item.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
@@ -76,6 +89,26 @@ const handleDelete = () => {
         :back-url="'/data-desa/rts'"
         :on-edit="handleEdit"
         :on-delete="handleDelete"
-    />
+    >
+        <template #custom>
+            <div class="space-y-1">
+                <div class="text-muted-foreground text-xs">Status Akun</div>
+                <div class="text-foreground text-sm font-semibold">
+                    <span 
+                        v-if="has_account" 
+                        class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200"
+                    >
+                        Sudah Punya Akun
+                    </span>
+                    <span 
+                        v-else 
+                        class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-200"
+                    >
+                        Belum Punya Akun
+                    </span>
+                </div>
+            </div>
+        </template>
+    </PageShow>
 </template>
 

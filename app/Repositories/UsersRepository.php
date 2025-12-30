@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\UsersRequest;
+use App\Repositories\RwsRepository;
+use App\Repositories\RtsRepository;
 
 class UsersRepository
 {
@@ -26,7 +28,7 @@ class UsersRepository
         $this->usersRoleRepository = $usersRoleRepository;
         $this->request             = UsersRequest::createFromBase(request());
 
-        $this->with = ['users_role', 'role', 'created_by_user', 'updated_by_user'];
+        $this->with = ['users_role.rw', 'users_role.rt', 'role', 'created_by_user', 'updated_by_user'];
     }
 
     public function customIndex($data)
@@ -161,6 +163,14 @@ class UsersRepository
     {
         $roles = $this->roleRepository->getAll();
 
+        // Get RW and RT options
+        $rwsRepository = app(RwsRepository::class);
+        $rws = $rwsRepository->getAll([], false, false);
+        
+        $rtsRepository = app(RtsRepository::class);
+        $rts = $rtsRepository->getAll([], false, false);
+        $rts->load('rw');
+
         $data += [
             'get_Roles' => $roles->pluck('name', 'id')->toArray(),
             'roles'     => $roles->map(function ($role) {
@@ -170,14 +180,53 @@ class UsersRepository
                     'description' => $role->description ?? '',
                 ];
             })->toArray(),
+            'rw_options' => $rws->map(function ($rw) {
+                return [
+                    'value' => $rw->id,
+                    'label' => $rw->nomor_rw . ' - ' . $rw->desa . ', ' . $rw->kecamatan . ', ' . $rw->kabupaten,
+                ];
+            })->toArray(),
+            'rt_options' => $rts->map(function ($rt) {
+                $rw = $rt->rw;
+                $label = $rt->nomor_rt;
+                if ($rw) {
+                    $label .= ' - RW ' . $rw->nomor_rw . ' - ' . $rw->desa;
+                }
+                return [
+                    'value' => $rt->id,
+                    'label' => $label,
+                ];
+            })->toArray(),
         ];
 
         if ($item) {
             try {
                 if (!$item->relationLoaded('users_role')) {
-                    $item->load('users_role');
+                    $item->load('users_role.rw', 'users_role.rt');
                 }
                 $data['selected_roles'] = $item->users_role_id_array;
+                
+                // Get rw_id and rt_id from users_role
+                $rwRole = $item->users_role->firstWhere('role_id', 35); // RW role ID
+                $rtRole = $item->users_role->firstWhere('role_id', 36); // RT role ID
+                
+                if ($rwRole) {
+                    $data['rw_id'] = $rwRole->rw_id;
+                    // Tambahkan ke item juga untuk dikirim ke frontend
+                    $item->setAttribute('rw_id', $rwRole->rw_id);
+                } else {
+                    $data['rw_id'] = null;
+                    $item->setAttribute('rw_id', null);
+                }
+                
+                if ($rtRole) {
+                    $data['rt_id'] = $rtRole->rt_id;
+                    // Tambahkan ke item juga untuk dikirim ke frontend
+                    $item->setAttribute('rt_id', $rtRole->rt_id);
+                } else {
+                    $data['rt_id'] = null;
+                    $item->setAttribute('rt_id', null);
+                }
             } catch (\Exception $e) {
                 $data['selected_roles'] = [];
                 Log::warning('Error loading user roles: ' . $e->getMessage());
@@ -260,8 +309,22 @@ class UsersRepository
 
             $model->syncRoles([(int) $model->current_role_id]);
 
+            // Prepare role data dengan rw_id dan rt_id
+            $roleData = [];
+            foreach ($data['role_id'] as $roleId) {
+                $roleData[$roleId] = [];
+                // Jika role adalah RW (35), tambahkan rw_id
+                if ($roleId == 35 && isset($data['rw_id'])) {
+                    $roleData[$roleId]['rw_id'] = $data['rw_id'];
+                }
+                // Jika role adalah RT (36), tambahkan rt_id
+                if ($roleId == 36 && isset($data['rt_id'])) {
+                    $roleData[$roleId]['rt_id'] = $data['rt_id'];
+                }
+            }
+            
             // Set roles di tabel users_role
-            $this->usersRoleRepository->setRole($model->id, $data['role_id']);
+            $this->usersRoleRepository->setRole($model->id, $data['role_id'], $roleData);
 
             DB::commit();
 

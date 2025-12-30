@@ -20,9 +20,10 @@ class UsersRoleRepository
      *
      * @param int $userId
      * @param array $roleIds
+     * @param array $roleData Array dengan key role_id dan value ['rw_id' => ?, 'rt_id' => ?]
      * @return void
      */
-    public function setRole($userId, $roleIds)
+    public function setRole($userId, $roleIds, $roleData = [])
     {
         // Hapus role lama
         $this->model->where('users_id', $userId)->delete();
@@ -31,12 +32,24 @@ class UsersRoleRepository
         if (!empty($roleIds) && is_array($roleIds)) {
             $data = [];
             foreach ($roleIds as $roleId) {
-                $data[] = [
+                $roleInfo = [
                     'users_id'   => $userId,
                     'role_id'    => $roleId,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];
+                
+                // Tambahkan rw_id atau rt_id jika ada di roleData
+                if (isset($roleData[$roleId])) {
+                    if (isset($roleData[$roleId]['rw_id'])) {
+                        $roleInfo['rw_id'] = $roleData[$roleId]['rw_id'];
+                    }
+                    if (isset($roleData[$roleId]['rt_id'])) {
+                        $roleInfo['rt_id'] = $roleData[$roleId]['rt_id'];
+                    }
+                }
+                
+                $data[] = $roleInfo;
             }
 
             $this->model->insert($data);

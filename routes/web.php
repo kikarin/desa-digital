@@ -12,12 +12,21 @@ use App\Http\Controllers\RwsController;
 use App\Http\Controllers\RtsController;
 use App\Http\Controllers\HousesController;
 use App\Http\Controllers\ResidentStatusController;
+use App\Http\Controllers\KategoriAduanController;
 use App\Http\Controllers\FamiliesController;
 use App\Http\Controllers\ResidentsController;
 use App\Http\Controllers\AssistanceProgramsController;
 use App\Http\Controllers\AssistanceItemsController;
 use App\Http\Controllers\AssistanceProgramItemsController;
 use App\Http\Controllers\AssistanceRecipientsController;
+use App\Http\Controllers\JenisSuratController;
+use App\Http\Controllers\AtributJenisSuratController;
+use App\Http\Controllers\PengajuanSuratController;
+use App\Http\Controllers\AdminTandaTanganController;
+use App\Http\Controllers\BeritaPengumumanController;
+use App\Http\Controllers\BankSampahController;
+use App\Http\Controllers\LayananDaruratController;
+use App\Http\Controllers\AduanMasyarakatController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -84,6 +93,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-warga/rws', RwsController::class)->names('rws');
     Route::get('/api/rws', [RwsController::class, 'apiIndex']);
     Route::post('/data-warga/rws/destroy-selected', [RwsController::class, 'destroy_selected'])->name('rws.destroy_selected');
+    Route::post('/data-warga/rws/{id}/create-account', [RwsController::class, 'createAccount'])->name('rws.create-account');
 });
 
 // Rts Routes
@@ -91,6 +101,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-warga/rts', RtsController::class)->names('rts');
     Route::get('/api/rts', [RtsController::class, 'apiIndex']);
     Route::post('/data-warga/rts/destroy-selected', [RtsController::class, 'destroy_selected'])->name('rts.destroy_selected');
+    Route::post('/data-warga/rts/{id}/create-account', [RtsController::class, 'createAccount'])->name('rts.create-account');
 });
 
 // Houses Routes
@@ -105,6 +116,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-master/resident-statuses', ResidentStatusController::class)->names('resident-statuses');
     Route::get('/api/resident-statuses', [ResidentStatusController::class, 'apiIndex']);
     Route::post('/data-master/resident-statuses/destroy-selected', [ResidentStatusController::class, 'destroy_selected'])->name('resident-statuses.destroy_selected');
+});
+
+// Kategori Aduan Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/data-master/kategori-aduan', KategoriAduanController::class)->names('kategori-aduan');
+    Route::get('/api/kategori-aduan', [KategoriAduanController::class, 'apiIndex']);
+    Route::post('/data-master/kategori-aduan/destroy-selected', [KategoriAduanController::class, 'destroy_selected'])->name('kategori-aduan.destroy_selected');
 });
 
 // Assistance Items Routes
@@ -158,6 +176,90 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/api/assistance-recipients/available-families', [AssistanceRecipientsController::class, 'getAvailableFamilies']);
     Route::get('/api/assistance-recipients/available-residents', [AssistanceRecipientsController::class, 'getAvailableResidents']);
     Route::post('/program-bantuan/penerima/destroy-selected', [AssistanceRecipientsController::class, 'destroy_selected'])->name('assistance-recipients.destroy_selected');
+});
+
+// Layanan Surat Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Jenis Surat Routes
+    Route::resource('/layanan-surat/jenis-surat', JenisSuratController::class)->names('jenis-surat');
+    Route::get('/api/jenis-surat', [JenisSuratController::class, 'apiIndex']);
+    Route::get('/api/jenis-surat/{id}', [JenisSuratController::class, 'apiShow']);
+    Route::post('/layanan-surat/jenis-surat/destroy-selected', [JenisSuratController::class, 'destroy_selected'])->name('jenis-surat.destroy_selected');
+
+    // Atribut Jenis Surat Routes
+    Route::resource('/layanan-surat/atribut-jenis-surat', AtributJenisSuratController::class)->names('atribut-jenis-surat');
+    Route::get('/api/atribut-jenis-surat', [AtributJenisSuratController::class, 'apiIndex']);
+    Route::post('/layanan-surat/atribut-jenis-surat/destroy-selected', [AtributJenisSuratController::class, 'destroy_selected'])->name('atribut-jenis-surat.destroy_selected');
+
+    // Pengajuan Surat Routes
+    Route::resource('/layanan-surat/pengajuan-surat', PengajuanSuratController::class)->names('pengajuan-surat');
+    Route::put('/layanan-surat/pengajuan-surat/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan-surat.update');
+    Route::get('/api/pengajuan-surat', [PengajuanSuratController::class, 'apiIndex']);
+    Route::get('/api/pengajuan-saya', [PengajuanSuratController::class, 'apiIndexPengajuanSaya']);
+    Route::get('/layanan-surat/pengajuan-surat/{id}/verifikasi', [PengajuanSuratController::class, 'verifikasi'])->name('pengajuan-surat.verifikasi');
+    Route::post('/layanan-surat/pengajuan-surat/{id}/verifikasi', [PengajuanSuratController::class, 'storeVerifikasi'])->name('pengajuan-surat.store-verifikasi');
+    Route::get('/layanan-surat/pengajuan-surat/{id}/preview-pdf', [PengajuanSuratController::class, 'previewPdf'])->name('pengajuan-surat.preview-pdf');
+    Route::get('/layanan-surat/pengajuan-surat/{id}/export-pdf', [PengajuanSuratController::class, 'exportPdf'])->name('pengajuan-surat.export-pdf');
+    Route::post('/layanan-surat/pengajuan-surat/destroy-selected', [PengajuanSuratController::class, 'destroy_selected'])->name('pengajuan-surat.destroy_selected');
+
+    // Pengajuan Saya (untuk warga)
+    Route::get('/layanan-surat/pengajuan-saya', [PengajuanSuratController::class, 'indexPengajuanSaya'])->name('pengajuan-saya.index');
+    Route::get('/layanan-surat/pengajuan-saya/create', [PengajuanSuratController::class, 'createPengajuanSaya'])->name('pengajuan-saya.create');
+    Route::post('/layanan-surat/pengajuan-saya', [PengajuanSuratController::class, 'store'])->name('pengajuan-saya.store');
+    Route::get('/layanan-surat/pengajuan-saya/{id}', [PengajuanSuratController::class, 'showPengajuanSaya'])->name('pengajuan-saya.show');
+    Route::get('/layanan-surat/pengajuan-saya/{id}/edit', [PengajuanSuratController::class, 'editPengajuanSaya'])->name('pengajuan-saya.edit');
+    Route::put('/layanan-surat/pengajuan-saya/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan-saya.update');
+    Route::post('/layanan-surat/pengajuan-saya/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan-saya.update-post'); // For method spoofing
+
+    // Admin Tanda Tangan Routes
+    Route::get('/api/admin-tanda-tangan', [AdminTandaTanganController::class, 'index'])->name('admin-tanda-tangan.index');
+    Route::post('/api/admin-tanda-tangan', [AdminTandaTanganController::class, 'store'])->name('admin-tanda-tangan.store');
+    Route::get('/api/admin-tanda-tangan/{type}', [AdminTandaTanganController::class, 'getByType'])->name('admin-tanda-tangan.get-by-type');
+});
+
+// Berita Pengumuman Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/berita-pengumuman', BeritaPengumumanController::class)->names('berita-pengumuman');
+    Route::get('/api/berita-pengumuman', [BeritaPengumumanController::class, 'apiIndex']);
+    Route::post('/berita-pengumuman/destroy-selected', [BeritaPengumumanController::class, 'destroy_selected'])->name('berita-pengumuman.destroy-selected');
+});
+
+// Bank Sampah Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/bank-sampah', BankSampahController::class)->names('bank-sampah');
+    Route::get('/api/bank-sampah', [BankSampahController::class, 'apiIndex']);
+    Route::post('/bank-sampah/destroy-selected', [BankSampahController::class, 'destroy_selected'])->name('bank-sampah.destroy-selected');
+});
+
+// Layanan Darurat Routes
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/layanan-darurat', LayananDaruratController::class)->names('layanan-darurat');
+    Route::get('/api/layanan-darurat', [LayananDaruratController::class, 'apiIndex']);
+    Route::post('/layanan-darurat/destroy-selected', [LayananDaruratController::class, 'destroy_selected'])->name('layanan-darurat.destroy-selected');
+});
+
+// Aduan Masyarakat Routes (Admin)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/aduan-masyarakat', AduanMasyarakatController::class)->names('aduan-masyarakat');
+    Route::get('/api/aduan-masyarakat', [AduanMasyarakatController::class, 'apiIndex']);
+    Route::get('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'verifikasi'])->name('aduan-masyarakat.verifikasi');
+    Route::post('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'storeVerifikasi'])->name('aduan-masyarakat.store-verifikasi');
+    Route::post('/aduan-masyarakat/destroy-selected', [AduanMasyarakatController::class, 'destroy_selected'])->name('aduan-masyarakat.destroy-selected');
+    Route::get('/api/kecamatan', [AduanMasyarakatController::class, 'getKecamatan']);
+    Route::get('/api/desa/{kecamatanId}', [AduanMasyarakatController::class, 'getDesa']);
+    Route::get('/api/aduan/kategori-aduan', [AduanMasyarakatController::class, 'getKategoriAduan']);
+});
+
+// Aduan Saya Routes (Warga)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/aduan-saya', [AduanMasyarakatController::class, 'indexSaya'])->name('aduan-saya.index');
+    Route::get('/api/aduan-saya', [AduanMasyarakatController::class, 'apiIndexSaya']);
+    Route::get('/aduan-saya/create', [AduanMasyarakatController::class, 'createSaya'])->name('aduan-saya.create');
+    Route::post('/aduan-saya', [AduanMasyarakatController::class, 'store'])->name('aduan-saya.store');
+    Route::get('/aduan-saya/{id}', [AduanMasyarakatController::class, 'showSaya'])->name('aduan-saya.show');
+    Route::get('/aduan-saya/{id}/edit', [AduanMasyarakatController::class, 'editSaya'])->name('aduan-saya.edit');
+    Route::put('/aduan-saya/{id}', [AduanMasyarakatController::class, 'update'])->name('aduan-saya.update');
+    Route::delete('/aduan-saya/{id}', [AduanMasyarakatController::class, 'destroy'])->name('aduan-saya.destroy');
 });
 
 require __DIR__ . '/settings.php';

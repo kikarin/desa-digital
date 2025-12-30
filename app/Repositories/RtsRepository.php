@@ -61,6 +61,11 @@ class RtsRepository
         if ($perPage === -1) {
             $allRts = $query->get();
             $transformedRts = $allRts->map(function ($rt) {
+                // Cek apakah RT ini sudah punya akun
+                $hasAccount = \App\Models\UsersRole::where('rt_id', $rt->id)
+                    ->where('role_id', 36) // RT role ID
+                    ->exists();
+                
                 return [
                     'id'         => $rt->id,
                     'nomor_rt'   => $rt->nomor_rt,
@@ -70,6 +75,7 @@ class RtsRepository
                     'kecamatan'  => $rt->kecamatan,
                     'kabupaten'  => $rt->kabupaten,
                     'keterangan' => $rt->keterangan,
+                    'has_account' => $hasAccount,
                 ];
             });
 
@@ -92,6 +98,11 @@ class RtsRepository
         $rts            = $query->paginate($perPage, ['*'], 'page', $pageForLaravel);
 
         $transformedRts = $rts->getCollection()->map(function ($rt) {
+            // Cek apakah RT ini sudah punya akun
+            $hasAccount = \App\Models\UsersRole::where('rt_id', $rt->id)
+                ->where('role_id', 36) // RT role ID
+                ->exists();
+            
             return [
                 'id'         => $rt->id,
                 'nomor_rt'   => $rt->nomor_rt,
@@ -101,6 +112,7 @@ class RtsRepository
                 'kecamatan'  => $rt->kecamatan,
                 'kabupaten'  => $rt->kabupaten,
                 'keterangan' => $rt->keterangan,
+                'has_account' => $hasAccount,
             ];
         });
 
@@ -138,6 +150,21 @@ class RtsRepository
 
     public function customShow($data, $item = null)
     {
+        if ($item) {
+            // Cek apakah RT ini sudah punya akun
+            $userRole = \App\Models\UsersRole::where('rt_id', $item->id)
+                ->where('role_id', 36) // RT role ID
+                ->with('users')
+                ->first();
+            
+            $data['has_account'] = $userRole ? true : false;
+            $data['user_account'] = $userRole ? [
+                'id' => $userRole->users->id ?? null,
+                'name' => $userRole->users->name ?? null,
+                'email' => $userRole->users->email ?? null,
+            ] : null;
+        }
+        
         return $data;
     }
 }

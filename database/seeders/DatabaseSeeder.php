@@ -17,30 +17,46 @@ class DatabaseSeeder extends Seeder
     {
         ini_set('memory_limit', '-1');
         ini_set('max_execution_time', 0);
-        try {
-            DB::beginTransaction();
-            $this->call(CategoryIdentitySeeder::class);
-            $this->call(IdentitySeeder::class);
 
-            $this->call(CategoryPermissionSeeder::class);
-            $this->call(UsersMenuSeeder::class);
-            $this->call(RoleSeeder::class);
-            $this->call(UsersSeeder::class);
-            $this->call(SetRolePermissionSeeder::class);
-            $this->call(ResidentStatusSeeder::class);
-            $this->call(AssistanceItemSeeder::class);
-            $this->call(RwsSeeder::class);
-            $this->call(RtsSeeder::class);
-            $this->call(HousesSeeder::class);
-            $this->call(FamiliesSeeder::class);
-            $this->call(ResidentsSeeder::class);
-
-            DB::commit();
-        } catch (Exception $e) {
-            DB::rollback();
-            throw $e;
-        }
+        $this->call(CategoryIdentitySeeder::class);
+        $this->call(IdentitySeeder::class);
+        $this->call(CategoryPermissionSeeder::class);
+        $this->call(UsersMenuSeeder::class);
+        $this->call(RoleSeeder::class);
+        $this->call(UsersSeeder::class);
+        $this->call(SetRolePermissionSeeder::class);
+        $this->call(ResidentStatusSeeder::class);
+        $this->call(AssistanceItemSeeder::class);
+        $this->call(KategoriAduanSeeder::class);
+        $this->call(RwsSeeder::class);
+        $this->call(RtsSeeder::class);
+        $this->call(HousesSeeder::class);
+        $this->call(FamiliesSeeder::class);
+        $this->call(ResidentsSeeder::class);
         $this->call(ImportSqlSeeder::class);
-
+        // try {
+        //     DB::beginTransaction();
+        //         $this->call([
+        //             CategoryIdentitySeeder::class,
+        //             IdentitySeeder::class,
+        //             CategoryPermissionSeeder::class,
+        //             UsersMenuSeeder::class,
+        //             RoleSeeder::class,
+        //             UsersSeeder::class,
+        //             SetRolePermissionSeeder::class,
+        //             ResidentStatusSeeder::class,
+        //             AssistanceItemSeeder::class,
+        //             RwsSeeder::class,
+        //             RtsSeeder::class,
+        //             HousesSeeder::class,
+        //             FamiliesSeeder::class,
+        //             ResidentsSeeder::class,
+        //             ImportSqlSeeder::class,
+        //         ]);
+        //         DB::commit();
+        //     } catch (Exception $e) {
+        //         DB::rollBack();
+        //         throw $e;
+        //     }
     }
 }

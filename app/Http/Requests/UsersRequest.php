@@ -31,6 +31,16 @@ class UsersRequest extends FormRequest
             'is_active' => 'required|boolean',
         ];
 
+        // Validasi rw_id jika role RW (35) dipilih
+        if (in_array(35, $this->role_id ?? [])) {
+            $rules['rw_id'] = 'required|exists:rws,id';
+        }
+
+        // Validasi rt_id jika role RT (36) dipilih
+        if (in_array(36, $this->role_id ?? [])) {
+            $rules['rt_id'] = 'required|exists:rts,id';
+        }
+
         if ($this->isMethod('patch') || $this->isMethod('put')) {
             $rules['id'] = 'required';
             // PERBAIKAN: Email unique validation untuk update

@@ -56,6 +56,20 @@ class RoleSeeder extends Seeder
                 'init_page_login'  => 'dashboard',
                 'is_allow_login'   => 1,
                 'is_vertical_menu' => true,
+            ], [
+                'id'               => 35,
+                'name'             => 'RW',
+                'bg'               => 'bg-primary',
+                'init_page_login'  => 'dashboard',
+                'is_allow_login'   => 1,
+                'is_vertical_menu' => true,
+            ], [
+                'id'               => 36,
+                'name'             => 'RT',
+                'bg'               => 'bg-success',
+                'init_page_login'  => 'dashboard',
+                'is_allow_login'   => 1,
+                'is_vertical_menu' => true,
             ],
         ];
         foreach ($listData as $data) {

@@ -3,8 +3,10 @@
 namespace App\Repositories;
 
 use App\Models\Families;
+use App\Models\AssistanceRecipient;
 use App\Traits\RepositoryTrait;
 use App\Repositories\HousesRepository;
+use Illuminate\Support\Facades\DB;
 
 class FamiliesRepository
 {
@@ -37,6 +39,33 @@ class FamiliesRepository
 
         if (request('filter_nomor_rumah')) {
             $query->where('houses.nomor_rumah', 'like', '%' . request('filter_nomor_rumah') . '%');
+        }
+
+        // Filter berdasarkan status penerimaan bantuan
+        if (request('filter_status_bantuan')) {
+            $statusBantuan = request('filter_status_bantuan');
+            
+            if ($statusBantuan === 'received') {
+                // Sudah menerima: ada assistance_recipient dengan status DATANG atau SELESAI
+                $query->whereExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('assistance_recipients')
+                        ->whereColumn('assistance_recipients.family_id', 'families.id')
+                        ->where('assistance_recipients.target_type', 'KELUARGA')
+                        ->whereIn('assistance_recipients.status', ['DATANG', 'SELESAI'])
+                        ->whereNull('assistance_recipients.deleted_at');
+                });
+            } elseif ($statusBantuan === 'not_received') {
+                // Belum menerima: tidak ada assistance_recipient dengan status DATANG atau SELESAI
+                $query->whereNotExists(function ($q) {
+                    $q->select(DB::raw(1))
+                        ->from('assistance_recipients')
+                        ->whereColumn('assistance_recipients.family_id', 'families.id')
+                        ->where('assistance_recipients.target_type', 'KELUARGA')
+                        ->whereIn('assistance_recipients.status', ['DATANG', 'SELESAI'])
+                        ->whereNull('assistance_recipients.deleted_at');
+                });
+            }
         }
 
         if (request('search')) {
@@ -188,10 +217,58 @@ class FamiliesRepository
             ];
         }
 
+        // Ambil program bantuan yang diterima oleh keluarga ini
+        $assistancePrograms = AssistanceRecipient::where('family_id', $item->id)
+            ->where('target_type', 'KELUARGA')
+            ->whereNull('deleted_at')
+            ->with([
+                'program' => function ($query) {
+                    $query->with(['program_items' => function ($q) {
+                        $q->whereNull('deleted_at')->with(['item' => function ($itemQuery) {
+                            $itemQuery->whereNull('deleted_at');
+                        }]);
+                    }]);
+                },
+                'penerima_lapangan'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($recipient) {
+                $program = $recipient->program;
+                $items = [];
+                
+                if ($program && $program->program_items) {
+                    foreach ($program->program_items as $programItem) {
+                        if ($programItem->item && !$programItem->item->deleted_at) {
+                            $items[] = [
+                                'nama_item' => $programItem->item->nama_item ?? '-',
+                                'tipe' => $programItem->item->tipe ?? '-',
+                                'satuan' => $programItem->item->satuan ?? '-',
+                                'jumlah' => $programItem->jumlah ?? 0,
+                            ];
+                        }
+                    }
+                }
+                
+                return [
+                    'id' => $recipient->id,
+                    'program_id' => $recipient->assistance_program_id,
+                    'nama_program' => $program->nama_program ?? '-',
+                    'tahun' => $program->tahun ?? '-',
+                    'periode' => $program->periode ?? '-',
+                    'status' => $recipient->status,
+                    'tanggal_penyaluran' => $recipient->tanggal_penyaluran ? $recipient->tanggal_penyaluran->format('Y-m-d') : null,
+                    'perwakilan' => $recipient->penerima_lapangan ? $recipient->penerima_lapangan->nama : '-',
+                    'catatan' => $recipient->catatan ?? '-',
+                    'items' => $items,
+                ];
+            });
+
         $data += [
             'fields'       => $fields,
             'actionFields' => $actionFields,
             'residents'    => $residents,
+            'assistancePrograms' => $assistancePrograms,
         ];
 
         return $data;

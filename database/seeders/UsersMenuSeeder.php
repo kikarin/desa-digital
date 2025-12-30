@@ -5,11 +5,13 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Permission;
 use App\Models\UsersMenu;
+use Illuminate\Support\Facades\DB;
 
 class UsersMenuSeeder extends Seeder
 {
     public function run(): void
     {
+        DB::table('users_menus')->truncate();
         $usersMenus = [
             [
                 'nama'          => 'Dashboard',
@@ -89,32 +91,114 @@ class UsersMenuSeeder extends Seeder
                         'urutan'        => 2,
                         'permission_id' => 'Assistance Items Show',
                     ],
+                    [
+                        'nama'          => 'Kategori Aduan',
+                        'kode'          => 'DATA-MASTER-KATEGORI-ADUAN',
+                        'url'           => '/data-master/kategori-aduan',
+                        'urutan'        => 3,
+                        'permission_id' => 'Kategori Aduan Show',
+                    ],
                 ],
             ],
             [
                 'nama'          => 'Program Bantuan',
                 'kode'          => 'PROGRAM-BANTUAN',
-                'url'           => '/program-bantuan',
+                'url'           => '/program-bantuan/program-bantuan',
                 'icon'          => 'HandHeart',
                 'rel'           => 0,
                 'urutan'        => 3,
+                'permission_id' => 'Assistance Programs Show',
+            ],
+            [
+                'nama'          => 'Layanan Surat',
+                'kode'          => 'LAYANAN-SURAT',
+                'url'           => '/layanan-surat',
+                'icon'          => 'FileText',
+                'rel'           => 0,
+                'urutan'        => 4,
                 'permission_id' => '',
                 'children'      => [
                     [
-                        'nama'          => 'Program Bantuan',
-                        'kode'          => 'PROGRAM-BANTUAN-PROGRAM',
-                        'url'           => '/program-bantuan/program-bantuan',
+                        'nama'          => 'Jenis Surat',
+                        'kode'          => 'LAYANAN-SURAT-JENIS-SURAT',
+                        'url'           => '/layanan-surat/jenis-surat',
                         'urutan'        => 1,
-                        'permission_id' => 'Assistance Programs Show',
+                        'permission_id' => 'Jenis Surat Show',
                     ],
                     [
-                        'nama'          => 'Penerima Bantuan',
-                        'kode'          => 'PROGRAM-BANTUAN-RECIPIENTS',
-                        'url'           => '/program-bantuan/penerima',
+                        'nama'          => 'Atribut Jenis Surat',
+                        'kode'          => 'LAYANAN-SURAT-ATRIBUT',
+                        'url'           => '/layanan-surat/atribut-jenis-surat',
                         'urutan'        => 2,
-                        'permission_id' => 'Assistance Recipients Show',
+                        'permission_id' => 'Atribut Jenis Surat Show',
+                    ],
+                    [
+                        'nama'          => 'Pengajuan Surat',
+                        'kode'          => 'LAYANAN-SURAT-PENGAJUAN',
+                        'url'           => '/layanan-surat/pengajuan-surat',
+                        'urutan'        => 3,
+                        'permission_id' => 'Pengajuan Surat Show',
+                    ],
+                    [
+                        'nama'          => 'Pengajuan Saya',
+                        'kode'          => 'LAYANAN-SURAT-PENGAJUAN-SAYA',
+                        'url'           => '/layanan-surat/pengajuan-saya',
+                        'urutan'        => 4,
+                        'permission_id' => 'Pengajuan Saya Show',
                     ],
                 ],
+            ],
+            [
+                'nama'          => 'Berita & Pengumuman',
+                'kode'          => 'BERITA-PENGUMUMAN',
+                'url'           => '/berita-pengumuman',
+                'icon'          => 'Newspaper',
+                'rel'           => 0,
+                'urutan'        => 5,
+                'permission_id' => 'Berita Pengumuman Show',
+            ],
+            [
+                'nama'          => 'Bank Sampah',
+                'kode'          => 'BANK-SAMPAH',
+                'url'           => '/bank-sampah',
+                'icon'          => 'Recycle',
+                'rel'           => 0,
+                'urutan'        => 6,
+                'permission_id' => 'Bank Sampah Show',
+            ],
+            [
+                'nama'          => 'Aduan',
+                'kode'          => 'ADUAN',
+                'url'           => '/aduan-masyarakat',
+                'icon'          => 'AlertCircle',
+                'rel'           => 0,
+                'urutan'        => 7,
+                'permission_id' => '',
+                'children'      => [
+                    [
+                        'nama'          => 'Aduan Masyarakat',
+                        'kode'          => 'ADUAN-MASYARAKAT',
+                        'url'           => '/aduan-masyarakat',
+                        'urutan'        => 1,
+                        'permission_id' => 'Aduan Masyarakat Show',
+                    ],
+                    [
+                        'nama'          => 'Aduan Saya',
+                        'kode'          => 'ADUAN-SAYA',
+                        'url'           => '/aduan-saya',
+                        'urutan'        => 2,
+                        'permission_id' => 'Aduan Saya Show',
+                    ],
+                ],
+            ],
+            [
+                'nama'          => 'Layanan Darurat',
+                'kode'          => 'LAYANAN-DARURAT',
+                'url'           => '/layanan-darurat',
+                'icon'          => 'Phone',
+                'rel'           => 0,
+                'urutan'        => 8,
+                'permission_id' => 'Layanan Darurat Show',
             ],
             [
                 'nama'          => 'Users',

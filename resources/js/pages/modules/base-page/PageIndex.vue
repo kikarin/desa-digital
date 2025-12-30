@@ -48,10 +48,18 @@ const fetchData = async () => {
             }
         });
 
+        if (!props.apiEndpoint) {
+            console.error('API endpoint tidak ditemukan');
+            return;
+        }
         const response = await axios.get(props.apiEndpoint, { params });
 
-        tableRows.value = response.data.data;
-        const meta = response.data.meta || {};
+        // Handle response structure
+        const responseData = response.data?.data || response.data || [];
+        const responseMeta = response.data?.meta || {};
+
+        tableRows.value = Array.isArray(responseData) ? responseData : [];
+        const meta = responseMeta || {};
         total.value = Number(meta.total) || 0;
         page.value = Number(meta.current_page) || 1;
         localLimit.value = Number(meta.per_page) || 10;
@@ -75,7 +83,7 @@ watch([page, localLimit, () => sort.value.key, () => sort.value.order], (vals, o
     }
 });
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
     title: string;
     breadcrumbs: BreadcrumbItem[];
     columns: { key: string; label: string }[];
@@ -83,13 +91,15 @@ const props = defineProps<{
     createUrl: string;
     selected?: number[];
     onDeleteSelected?: () => void;
-    apiEndpoint: string;
+    apiEndpoint?: string;
     onDeleteRowConfirm?: (row: any) => Promise<void>;
     hidePagination?: boolean;
     limit?: number;
     disableLength?: boolean;
     hideSearch?: boolean;
     showFilter?: boolean;
+    hideCheckbox?: boolean;
+    canDeleteSelected?: boolean;
     filterOptions?: {
         rw?: Array<{ value: number; label: string }>;
         rt?: Array<{ value: number; label: string; rw_id?: number }>;
@@ -97,6 +107,8 @@ const props = defineProps<{
         nomor_rumah?: boolean;
         status?: Array<{ value: number; label: string }>;
         program?: Array<{ value: number; label: string }>;
+        status_bantuan?: Array<{ value: string; label: string }>;
+        tipe?: Array<{ value: string; label: string }>;
     };
     can?: {
         Add?: boolean;
@@ -107,7 +119,9 @@ const props = defineProps<{
     };
     hideCreateButton?: boolean;
     createMultipleUrl?: string;
-}>();
+}>(), {
+    apiEndpoint: '',
+});
 
 const emit = defineEmits(['search', 'update:selected']);
 
@@ -161,6 +175,10 @@ const confirmDeleteRow = async () => {
     }
 
     try {
+        if (!props.apiEndpoint) {
+            toast({ title: 'API endpoint tidak ditemukan', variant: 'destructive' });
+            return;
+        }
         const module = props.apiEndpoint.split('/').pop();
         await router.delete(`/${module}/${rowToDelete.value.id}`, {
             onSuccess: () => {
@@ -218,6 +236,8 @@ const handleFilterApply = (filterValues: any) => {
     }
     if (filterValues.status?.value) filters.value.status_id = filterValues.status.value;
     if (filterValues.program?.value) filters.value.program_id = filterValues.program.value;
+    if (filterValues.status_bantuan?.value) filters.value.status_bantuan = filterValues.status_bantuan.value;
+    if (filterValues.tipe?.value) filters.value.tipe = filterValues.tipe.value;
     page.value = 1;
     fetchData();
 };
@@ -265,6 +285,18 @@ const getFilterDialogProps = () => {
             options: props.filterOptions.program,
         };
     }
+    if (props.filterOptions?.status_bantuan) {
+        filterProps.status_bantuan = {
+            value: filters.value.status_bantuan || null,
+            options: props.filterOptions.status_bantuan,
+        };
+    }
+    if (props.filterOptions?.tipe) {
+        filterProps.tipe = {
+            value: filters.value.tipe || null,
+            options: props.filterOptions.tipe,
+        };
+    }
     return filterProps;
 };
 
@@ -286,6 +318,7 @@ defineExpose({ fetchData });
                 :on-filter-click="handleFilterClick"
                 v-bind="createUrl && !props.hideCreateButton ? { createUrl } : {}"
                 :create-multiple-url="props.createMultipleUrl"
+                :can-delete-selected="props.canDeleteSelected"
             />
             <DataTable
                 :columns="columns"
@@ -294,6 +327,7 @@ defineExpose({ fetchData });
                 :total="total"
                 :loading="loading"
                 v-model:selected="localSelected"
+                :hide-checkbox="props.hideCheckbox"
                 :search="search"
                 :sort="sort"
                 :page="page"

@@ -38,6 +38,8 @@ const confirmDelete = () => {
         <div class="space-y-4 p-4">
             <!-- Header & Action Buttons -->
             <HeaderShow :title="`Detail ${title}`">
+                <slot name="custom-action" />
+                
                 <!-- Only show if onEdit is provided -->
                 <button
                     v-if="onEdit"
@@ -59,13 +61,12 @@ const confirmDelete = () => {
                 </button>
 
                 <!-- Back -->
-                <button
-                    class="border-input bg-background hover:bg-accent hover:text-accent-foreground inline-flex items-center gap-1 rounded-md border px-3 py-2 text-sm transition-colors"
+                <Button
                     @click="() => router.visit(backUrl || '#')"
                 >
                     <ArrowLeft class="h-4 w-4" />
                     Back
-                </button>
+                </Button>
             </HeaderShow>
 
             <div class="grid grid-cols-12 gap-6">
@@ -94,6 +95,11 @@ const confirmDelete = () => {
                         <div class="px-6 pb-6">
                             <slot name="custom" />
                         </div>
+                    </div>
+
+                    <!-- Additional Content Slot (for buttons, cards, etc.) -->
+                    <div class="mt-6">
+                        <slot name="additional-content" />
                     </div>
                 </div>
 

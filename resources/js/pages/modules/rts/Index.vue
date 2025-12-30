@@ -26,6 +26,18 @@ const columns = [
     { key: 'kecamatan', label: 'Kecamatan', searchable: true, orderable: true, visible: true },
     { key: 'kabupaten', label: 'Kabupaten', searchable: true, orderable: true, visible: true },
     { key: 'keterangan', label: 'Keterangan', searchable: true, orderable: false, visible: true },
+    {
+        key: 'has_account',
+        label: 'Status Akun',
+        searchable: false,
+        orderable: false,
+        visible: true,
+        format: (row: any) => {
+            return row.has_account
+                ? '<span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Sudah Punya Akun</span>'
+                : '<span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full">Belum Punya Akun</span>';
+        },
+    },
 ];
 
 const selected = ref<number[]>([]);
@@ -44,23 +56,54 @@ onMounted(async () => {
     }
 });
 
-const actions = (row: any) => [
-    {
-        label: 'Detail',
-        onClick: () => router.visit(`/data-warga/rts/${row.id}`),
-        permission: props.can?.Detail,
-    },
-    {
-        label: 'Edit',
-        onClick: () => router.visit(`/data-warga/rts/${row.id}/edit`),
-        permission: props.can?.Edit,
-    },
-    {
+const handleCreateAccount = async (row: any) => {
+    try {
+        const response = await axios.post(`/data-warga/rts/${row.id}/create-account`);
+        toast({
+            title: response.data?.message || 'Akun berhasil dibuat',
+            variant: 'success',
+        });
+        pageIndex.value.fetchData();
+    } catch (error: any) {
+        const message = error.response?.data?.message || 'Gagal membuat akun';
+        toast({
+            title: message,
+            variant: 'destructive',
+        });
+    }
+};
+
+const actions = (row: any) => {
+    const actionList = [
+        {
+            label: 'Detail',
+            onClick: () => router.visit(`/data-warga/rts/${row.id}`),
+            permission: props.can?.Detail,
+        },
+        {
+            label: 'Edit',
+            onClick: () => router.visit(`/data-warga/rts/${row.id}/edit`),
+            permission: props.can?.Edit,
+        },
+    ];
+    
+    // Tambahkan action Buat Akun jika belum punya akun
+    if (!row.has_account) {
+        actionList.push({
+            label: 'Buat Akun',
+            onClick: () => handleCreateAccount(row),
+            permission: props.can?.Add, // Gunakan permission Add untuk create account
+        });
+    }
+    
+    actionList.push({
         label: 'Delete',
         onClick: () => pageIndex.value.handleDeleteRow(row),
         permission: props.can?.Delete,
-    },
-];
+    });
+    
+    return actionList;
+};
 
 const deleteSelected = async () => {
     if (!selected.value.length) {

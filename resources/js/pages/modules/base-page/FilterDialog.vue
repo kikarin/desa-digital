@@ -15,6 +15,8 @@ const props = defineProps<{
         nomor_rumah?: { value: string | null };
         status?: { value: number | string | null; options: Array<{ value: number | string; label: string }> };
         program?: { value: number | null; options: Array<{ value: number; label: string }> };
+        status_bantuan?: { value: string | null; options: Array<{ value: string; label: string }> };
+        tipe?: { value: string | null; options: Array<{ value: string; label: string }> };
     };
 }>();
 
@@ -65,6 +67,8 @@ const handleReset = () => {
     if (props.filters.nomor_rumah) resetFilters.nomor_rumah = { value: null };
     if (props.filters.status) resetFilters.status = { value: null, options: props.filters.status.options };
     if (props.filters.program) resetFilters.program = { value: null, options: props.filters.program.options };
+    if (props.filters.status_bantuan) resetFilters.status_bantuan = { value: null, options: props.filters.status_bantuan.options };
+    if (props.filters.tipe) resetFilters.tipe = { value: null, options: props.filters.tipe.options };
     localFilters.value = resetFilters;
     emit('reset', resetFilters);
     emit('update:open', false);
@@ -202,6 +206,50 @@ const handleReset = () => {
                                 v-for="option in localFilters.program.options"
                                 :key="option.value"
                                 :value="String(option.value)"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div v-if="localFilters.status_bantuan" class="space-y-2">
+                    <Label>Status Bantuan</Label>
+                    <Select
+                        :model-value="localFilters.status_bantuan.value || 'all'"
+                        @update:model-value="(val: string) => localFilters.status_bantuan!.value = val && val !== 'all' ? val : null"
+                    >
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Pilih Status Bantuan" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua Status</SelectItem>
+                            <SelectItem
+                                v-for="option in localFilters.status_bantuan.options"
+                                :key="option.value"
+                                :value="option.value"
+                            >
+                                {{ option.label }}
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div v-if="localFilters.tipe" class="space-y-2">
+                    <Label>Tipe</Label>
+                    <Select
+                        :model-value="localFilters.tipe.value || 'all'"
+                        @update:model-value="(val: string) => localFilters.tipe!.value = val && val !== 'all' ? val : null"
+                    >
+                        <SelectTrigger class="w-full">
+                            <SelectValue placeholder="Pilih Tipe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Semua Tipe</SelectItem>
+                            <SelectItem
+                                v-for="option in localFilters.tipe.options"
+                                :key="option.value"
+                                :value="option.value"
                             >
                                 {{ option.label }}
                             </SelectItem>

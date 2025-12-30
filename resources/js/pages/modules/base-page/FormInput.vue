@@ -82,12 +82,22 @@ const formatDateValue = (dateValue: any) => {
     }
 };
 
+// Helper function untuk mengecek apakah value adalah File object
+const isFile = (value: any): value is File => {
+    return value instanceof File || (value && typeof value === 'object' && 'name' in value && 'size' in value && 'type' in value);
+};
+
 // Initialize date values dan select-or-text dari initialData
 watch(() => props.initialData, (newData: Record<string, any> | undefined) => {
     if (newData) {
         getFormInputs.value.forEach((input: any) => {
             if (input.type === 'date' && newData[input.name]) {
-                dateValues.value[input.name] = parseDateValue(newData[input.name]);
+                const parsedDate = parseDateValue(newData[input.name]);
+                dateValues.value[input.name] = parsedDate;
+                // Also set form value for date
+                if (parsedDate) {
+                    form[input.name] = formatDateValue(parsedDate);
+                }
             }
             if (input.type === 'select-or-text') {
                 if (newData[input.name + '_id']) {
@@ -266,11 +276,15 @@ const selectMultiOption = (fieldName: string, value: string | number) => {
     } else {
         form[fieldName] = [...currentValues, value];
     }
+    // Emit field-updated event untuk sinkronisasi
+    emit('field-updated', { field: fieldName, value: form[fieldName] });
 };
 
 const removeMultiOption = (fieldName: string, value: string | number) => {
     const currentValues = form[fieldName] || [];
     form[fieldName] = currentValues.filter((v: any) => v !== value);
+    // Emit field-updated event untuk sinkronisasi
+    emit('field-updated', { field: fieldName, value: form[fieldName] });
 };
 
 const getSelectedLabels = (fieldName: string, options: { value: string | number; label: string }[]) => {
@@ -369,6 +383,8 @@ const getFilteredOptions = (input: any) => {
                                             } else {
                                                 form[input.name] = selected.filter((v: any) => v !== option.value);
                                             }
+                                            // Emit field-updated event untuk sinkronisasi
+                                            emit('field-updated', { field: input.name, value: form[input.name] });
                                         }
                                     "
                                 />
@@ -739,6 +755,29 @@ const getFilteredOptions = (input: any) => {
                         <p v-if="input.help" class="text-muted-foreground text-sm">
                             {{ input.help }}
                         </p>
+                    </div>
+
+                    <!-- FILE INPUT (single file) -->
+                    <div v-else-if="input.type === 'file'" class="space-y-2">
+                        <Input
+                            type="file"
+                            accept="image/*"
+                            :required="input.required"
+                            @change="(e: Event) => {
+                                const target = e.target as HTMLInputElement;
+                                if (target.files && target.files.length > 0) {
+                                    form[input.name] = target.files[0];
+                                } else {
+                                    form[input.name] = null;
+                                }
+                            }"
+                        />
+                        <div v-if="initialData?.[input.name] && typeof initialData[input.name] === 'string' && !form[input.name]" class="text-sm text-muted-foreground">
+                            Foto saat ini: <a :href="initialData[input.name]" target="_blank" class="text-primary hover:underline">Lihat foto</a>
+                        </div>
+                        <div v-if="isFile(form[input.name])" class="text-sm text-muted-foreground">
+                            File baru dipilih: {{ (form[input.name] as File).name }}
+                        </div>
                     </div>
 
                     <!-- DEFAULT INPUT (text, email, number) -->

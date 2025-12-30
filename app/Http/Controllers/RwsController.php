@@ -8,6 +8,10 @@ use App\Traits\BaseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use App\Models\UsersRole;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use App\Repositories\UsersRoleRepository;
 
 class RwsController extends Controller implements HasMiddleware
 {
@@ -63,6 +67,74 @@ class RwsController extends Controller implements HasMiddleware
                 'order'        => $data['meta']['order'],
             ],
         ]);
+    }
+
+    /**
+     * Buat akun untuk RW
+     */
+    public function createAccount($id)
+    {
+        try {
+            $rw = $this->repository->getById($id);
+            
+            // Cek apakah sudah punya akun
+            $existingAccount = UsersRole::where('rw_id', $rw->id)
+                ->where('role_id', 35) // RW role ID
+                ->first();
+            
+            if ($existingAccount) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'RW ini sudah memiliki akun',
+                ], 400);
+            }
+            
+            // Generate email dan password (pastikan email unik)
+            $baseEmail = 'rw' . str_replace(' ', '', strtolower($rw->nomor_rw)) . '@desa-digital';
+            $email = $baseEmail;
+            $counter = 1;
+            while (User::where('email', $email)->exists()) {
+                $email = 'rw' . str_replace(' ', '', strtolower($rw->nomor_rw)) . $counter . '@desa-digital';
+                $counter++;
+            }
+            $password = 'RW' . $rw->nomor_rw . '2026!';
+            $name = 'RW ' . $rw->nomor_rw;
+            $noHp = '081234567890'; // Default no HP, bisa diubah nanti
+            
+            // Buat user
+            $user = User::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make($password),
+                'no_hp' => $noHp,
+                'is_active' => 1,
+                'current_role_id' => 35, // RW role ID
+            ]);
+            
+            // Assign role RW dengan rw_id
+            $usersRoleRepository = app(UsersRoleRepository::class);
+            $usersRoleRepository->setRole($user->id, [35], [
+                35 => ['rw_id' => $rw->id]
+            ]);
+            
+            // Sync dengan Spatie Permission
+            $user->syncRoles([35]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Akun berhasil dibuat. Email: ' . $email . ', Password: ' . $password,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat akun: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
 

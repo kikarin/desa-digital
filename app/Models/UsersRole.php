@@ -29,4 +29,14 @@ class UsersRole extends Model
     {
         return $this->belongsTo(Role::class, 'role_id');
     }
+
+    public function rw()
+    {
+        return $this->belongsTo(Rws::class, 'rw_id');
+    }
+
+    public function rt()
+    {
+        return $this->belongsTo(Rts::class, 'rt_id');
+    }
 }

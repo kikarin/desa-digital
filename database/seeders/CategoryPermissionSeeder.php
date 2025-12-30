@@ -82,6 +82,51 @@ class CategoryPermissionSeeder extends Seeder
                 'name'       => 'Assistance Recipients',
                 'permission' => 'CRUD',
             ],
+            [
+                'name'       => 'Jenis Surat',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Atribut Jenis Surat',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'              => 'Pengajuan Surat',
+                'permission'        => 'CRUD',
+                'permission_common' => [
+                    'Pengajuan Surat Verifikasi',
+                    'Pengajuan Surat Export PDF',
+                    'Pengajuan Surat Preview PDF',
+                ],
+            ],
+            [
+                'name'       => 'Pengajuan Saya',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Berita Pengumuman',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Bank Sampah',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Kategori Aduan',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Aduan Masyarakat',
+                'permission' => ['Aduan Masyarakat Show', 'Aduan Masyarakat Add', 'Aduan Masyarakat Edit', 'Aduan Masyarakat Detail', 'Aduan Masyarakat Delete', 'Aduan Masyarakat Verifikasi'],
+            ],
+            [
+                'name'       => 'Aduan Saya',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Layanan Darurat',
+                'permission' => 'CRUD',
+            ],
         ];
 
         $listCrud = ['Show', 'Add', 'Edit', 'Detail', 'Delete'];

@@ -24,6 +24,7 @@ const props = defineProps({
     hidePagination: { type: Boolean, default: false },
     disableLength: { type: Boolean, default: false },
     hideSearch: { type: Boolean, default: false },
+    hideCheckbox: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['update:selected', 'update:search', 'update:sort', 'update:page', 'update:perPage', 'deleted']);
@@ -71,7 +72,7 @@ const selectLabel = computed(() => {
                     <TableHeader>
                         <TableRow>
                             <TableHead class="w-12 text-center">No</TableHead>
-                            <TableHead class="w-10 text-center">
+                            <TableHead v-if="!props.hideCheckbox" class="w-10 text-center">
                                 <label
                                     class="bg-background relative inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-gray-500"
                                 >
@@ -111,7 +112,7 @@ const selectLabel = computed(() => {
                             <TableCell class="text-center text-xs sm:text-sm px-2 sm:px-4 whitespace-normal break-words">
                                 {{ (props.page - 1) * props.perPage + index + 1 }}
                             </TableCell>
-                            <TableCell class="text-center text-xs sm:text-sm px-2 sm:px-4 whitespace-normal break-words">
+                            <TableCell v-if="!props.hideCheckbox" class="text-center text-xs sm:text-sm px-2 sm:px-4 whitespace-normal break-words">
                                 <label
                                     class="bg-background relative inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded border border-gray-500"
                                 >
