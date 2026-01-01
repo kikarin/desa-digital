@@ -127,6 +127,23 @@ class CategoryPermissionSeeder extends Seeder
                 'name'       => 'Layanan Darurat',
                 'permission' => 'CRUD',
             ],
+            [
+                'name'       => 'Kategori Proposal',
+                'permission' => 'CRUD',
+            ],
+            [
+                'name'       => 'Pengajuan Proposal',
+                'permission' => 'CRUD',
+                'permission_common' => [
+                    'Pengajuan Proposal Verifikasi',
+                    'Pengajuan Proposal Export PDF',
+                    'Pengajuan Proposal Preview PDF',
+                ],
+            ],
+            [
+                'name'       => 'Pengajuan Proposal Saya',
+                'permission' => 'CRUD',
+            ],
         ];
 
         $listCrud = ['Show', 'Add', 'Edit', 'Detail', 'Delete'];

@@ -36,6 +36,8 @@ class Houses extends Model
         'nama_fasilitas',
         'pengelola',
         'fotos',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [

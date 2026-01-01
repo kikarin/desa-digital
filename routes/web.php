@@ -27,14 +27,15 @@ use App\Http\Controllers\BeritaPengumumanController;
 use App\Http\Controllers\BankSampahController;
 use App\Http\Controllers\LayananDaruratController;
 use App\Http\Controllers\AduanMasyarakatController;
+use App\Http\Controllers\KategoriProposalController;
+use App\Http\Controllers\PengajuanProposalController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 // Users Routes
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -108,6 +109,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-warga/houses', HousesController::class)->names('houses');
     Route::get('/api/houses', [HousesController::class, 'apiIndex']);
+    Route::get('/api/houses/{id}', [HousesController::class, 'apiShow']);
+    Route::get('/api/houses-stats', [HousesController::class, 'apiStats']);
     Route::post('/data-warga/houses/destroy-selected', [HousesController::class, 'destroy_selected'])->name('houses.destroy_selected');
 });
 
@@ -125,6 +128,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/data-master/kategori-aduan/destroy-selected', [KategoriAduanController::class, 'destroy_selected'])->name('kategori-aduan.destroy_selected');
 });
 
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/data-master/kategori-proposal', KategoriProposalController::class)->names('kategori-proposal');
+    Route::get('/api/kategori-proposal', [KategoriProposalController::class, 'apiIndex']);
+    Route::post('/data-master/kategori-proposal/destroy-selected', [KategoriProposalController::class, 'destroy_selected'])->name('kategori-proposal.destroy_selected');
+});
+
 // Assistance Items Routes
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-master/assistance-items', AssistanceItemsController::class)->names('assistance-items');
@@ -136,6 +145,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('/data-warga/families', FamiliesController::class)->names('families');
         Route::get('/api/families', [FamiliesController::class, 'apiIndex']);
+        Route::get('/api/families/{id}', [FamiliesController::class, 'apiShow']);
         Route::get('/api/families/{id}/residents', [FamiliesController::class, 'getResidents']);
         Route::put('/api/families/{id}/set-kepala-keluarga', [FamiliesController::class, 'setKepalaKeluarga']);
         Route::post('/data-warga/families/destroy-selected', [FamiliesController::class, 'destroy_selected'])->name('families.destroy_selected');
@@ -228,6 +238,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/bank-sampah', BankSampahController::class)->names('bank-sampah');
     Route::get('/api/bank-sampah', [BankSampahController::class, 'apiIndex']);
+    Route::get('/api/bank-sampah/{id}', [BankSampahController::class, 'apiShow']);
     Route::post('/bank-sampah/destroy-selected', [BankSampahController::class, 'destroy_selected'])->name('bank-sampah.destroy-selected');
 });
 
@@ -235,6 +246,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/layanan-darurat', LayananDaruratController::class)->names('layanan-darurat');
     Route::get('/api/layanan-darurat', [LayananDaruratController::class, 'apiIndex']);
+    Route::get('/api/layanan-darurat/{id}', [LayananDaruratController::class, 'apiShow']);
     Route::post('/layanan-darurat/destroy-selected', [LayananDaruratController::class, 'destroy_selected'])->name('layanan-darurat.destroy-selected');
 });
 
@@ -242,6 +254,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/aduan-masyarakat', AduanMasyarakatController::class)->names('aduan-masyarakat');
     Route::get('/api/aduan-masyarakat', [AduanMasyarakatController::class, 'apiIndex']);
+    Route::get('/api/aduan-masyarakat/{id}', [AduanMasyarakatController::class, 'apiShow']);
     Route::get('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'verifikasi'])->name('aduan-masyarakat.verifikasi');
     Route::post('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'storeVerifikasi'])->name('aduan-masyarakat.store-verifikasi');
     Route::post('/aduan-masyarakat/destroy-selected', [AduanMasyarakatController::class, 'destroy_selected'])->name('aduan-masyarakat.destroy-selected');
@@ -260,6 +273,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/aduan-saya/{id}/edit', [AduanMasyarakatController::class, 'editSaya'])->name('aduan-saya.edit');
     Route::put('/aduan-saya/{id}', [AduanMasyarakatController::class, 'update'])->name('aduan-saya.update');
     Route::delete('/aduan-saya/{id}', [AduanMasyarakatController::class, 'destroy'])->name('aduan-saya.destroy');
+});
+
+// Pengajuan Proposal Routes (Admin)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::resource('/pengajuan-proposal', PengajuanProposalController::class)->names('pengajuan-proposal');
+    Route::get('/api/pengajuan-proposal', [PengajuanProposalController::class, 'apiIndex']);
+    Route::get('/api/pengajuan-proposal/{id}', [PengajuanProposalController::class, 'apiShow']);
+    Route::post('/pengajuan-proposal/destroy-selected', [PengajuanProposalController::class, 'destroy_selected'])->name('pengajuan-proposal.destroy-selected');
+    Route::get('/pengajuan-proposal/{id}/verifikasi', [PengajuanProposalController::class, 'verifikasi'])->name('pengajuan-proposal.verifikasi');
+    Route::post('/pengajuan-proposal/{id}/verifikasi', [PengajuanProposalController::class, 'storeVerifikasi'])->name('pengajuan-proposal.store-verifikasi');
+    Route::get('/pengajuan-proposal/{id}/preview-pdf', [PengajuanProposalController::class, 'previewPdf'])->name('pengajuan-proposal.preview-pdf');
+    Route::get('/pengajuan-proposal/{id}/export-pdf', [PengajuanProposalController::class, 'exportPdf'])->name('pengajuan-proposal.export-pdf');
+});
+
+// Pengajuan Proposal Saya Routes (User)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/pengajuan-proposal-saya', [PengajuanProposalController::class, 'indexPengajuanSaya'])->name('pengajuan-proposal-saya.index');
+    Route::get('/pengajuan-proposal-saya/create', [PengajuanProposalController::class, 'createPengajuanSaya'])->name('pengajuan-proposal-saya.create');
+    Route::post('/pengajuan-proposal-saya', [PengajuanProposalController::class, 'store'])->name('pengajuan-proposal-saya.store');
+    Route::get('/pengajuan-proposal-saya/{id}', [PengajuanProposalController::class, 'showPengajuanSaya'])->name('pengajuan-proposal-saya.show');
+    Route::get('/pengajuan-proposal-saya/{id}/edit', [PengajuanProposalController::class, 'editPengajuanSaya'])->name('pengajuan-proposal-saya.edit');
+    Route::put('/pengajuan-proposal-saya/{id}', [PengajuanProposalController::class, 'update'])->name('pengajuan-proposal-saya.update');
+    Route::get('/api/pengajuan-proposal-saya', [PengajuanProposalController::class, 'apiIndexPengajuanSaya']);
 });
 
 require __DIR__ . '/settings.php';

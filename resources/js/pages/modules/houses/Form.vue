@@ -4,6 +4,7 @@ import FormInput from '@/pages/modules/base-page/FormInput.vue';
 import { computed, ref, watch } from 'vue';
 import { useForm, router } from '@inertiajs/vue3';
 import { useToast } from '@/components/ui/toast/useToast';
+import LocationMapPicker from '@/components/LocationMapPicker.vue';
 
 const { save } = useHandleFormSave();
 const { toast } = useToast();
@@ -18,10 +19,23 @@ const props = defineProps<{
 const rtOptions = computed(() => props.listRt || []);
 const residentsOptions = computed(() => props.listResidents || []);
 
+// Computed initialData yang menggabungkan props.initialData dengan form data (untuk rt_id, latitude, longitude)
+const computedInitialData = computed(() => {
+    return {
+        ...props.initialData,
+        rt_id: form.rt_id || props.initialData?.rt_id ? String(form.rt_id || props.initialData?.rt_id) : null,
+        latitude: form.latitude || props.initialData?.latitude || null,
+        longitude: form.longitude || props.initialData?.longitude || null,
+    };
+});
+
 const getInitialFormData = () => {
     const data: Record<string, any> = {
         jenis_rumah: props.initialData?.jenis_rumah || null,
         deleted_media_ids: [], // Initialize deleted_media_ids
+        latitude: props.initialData?.latitude || null,
+        longitude: props.initialData?.longitude || null,
+        rt_id: props.initialData?.rt_id ? String(props.initialData.rt_id) : null,
     };
     
     if (props.initialData) {
@@ -59,6 +73,24 @@ const selectedJenisRumah = computed({
 watch(() => props.initialData?.jenis_rumah, (newVal) => {
     if (newVal) {
         form.jenis_rumah = newVal;
+    }
+}, { immediate: true });
+
+watch(() => props.initialData?.rt_id, (newVal) => {
+    if (newVal) {
+        form.rt_id = String(newVal);
+    }
+}, { immediate: true });
+
+watch(() => props.initialData?.latitude, (newVal) => {
+    if (newVal !== undefined) {
+        form.latitude = newVal;
+    }
+}, { immediate: true });
+
+watch(() => props.initialData?.longitude, (newVal) => {
+    if (newVal !== undefined) {
+        form.longitude = newVal;
     }
 }, { immediate: true });
 
@@ -288,10 +320,27 @@ const handleFieldUpdated = (field: { field: string; value: any }) => {
     }
 };
 
+const getMarkerPopupText = () => {
+    if (!form.jenis_rumah) return 'Lokasi Rumah';
+    
+    const labels: Record<string, string> = {
+        'RUMAH_TINGGAL': 'Rumah Tinggal',
+        'KONTRAKAN': 'Kontrakan',
+        'WARUNG_TOKO_USAHA': 'Warung / Toko / Usaha',
+        'FASILITAS_UMUM': 'Fasilitas Umum',
+    };
+    
+    return labels[form.jenis_rumah] || 'Lokasi Rumah';
+};
+
 const handleSave = (data: Record<string, any>) => {
     const formData: Record<string, any> = {
         ...data,
-        rt_id: Number(data.rt_id),
+        // Pastikan rt_id diambil dari data atau form, dan convert ke number
+        rt_id: data.rt_id ? Number(data.rt_id) : (form.rt_id ? Number(form.rt_id) : null),
+        // Include latitude dan longitude dari form (karena di-update via v-model di LocationMapPicker)
+        latitude: form.latitude || null,
+        longitude: form.longitude || null,
     };
 
     if (selectedJenisRumah.value === 'RUMAH_TINGGAL') {
@@ -397,11 +446,22 @@ const handleSave = (data: Record<string, any>) => {
 </script>
 
 <template>
-    <FormInput
-        :form-inputs="formInputs"
-        :initial-data="initialData"
-        @save="handleSave"
-        @field-updated="handleFieldUpdated"
-    />
+    <div class="space-y-6">
+        <FormInput
+            :form-inputs="formInputs"
+            :initial-data="computedInitialData"
+            @save="handleSave"
+            @field-updated="handleFieldUpdated"
+        />
+        
+        <!-- Location Map Picker -->
+        <LocationMapPicker
+            v-if="form.jenis_rumah"
+            v-model:latitude="form.latitude"
+            v-model:longitude="form.longitude"
+            :jenis-rumah="form.jenis_rumah"
+            :marker-popup-text="getMarkerPopupText()"
+        />
+    </div>
 </template>
 

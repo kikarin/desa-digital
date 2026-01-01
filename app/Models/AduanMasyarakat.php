@@ -48,17 +48,17 @@ class AduanMasyarakat extends Model
 
     public function kategori_aduan()
     {
-        return $this->belongsTo(KategoriAduan::class, 'kategori_aduan_id');
+        return $this->belongsTo(KategoriAduan::class, 'kategori_aduan_id')->withDefault();
     }
 
     public function kecamatan()
     {
-        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
+        return $this->belongsTo(Kecamatan::class, 'kecamatan_id')->withDefault();
     }
 
     public function desa()
     {
-        return $this->belongsTo(Desa::class, 'desa_id');
+        return $this->belongsTo(Desa::class, 'desa_id')->withDefault();
     }
 
     public function files()

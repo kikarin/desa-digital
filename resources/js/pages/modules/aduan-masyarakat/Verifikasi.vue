@@ -7,18 +7,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card/index';
 import { router } from '@inertiajs/vue3';
-import { onMounted, onUnmounted, ref, computed } from 'vue';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { ref, computed } from 'vue';
 import axios from 'axios';
-
-// Fix untuk default marker icon di Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
+import LocationMapView from '@/components/LocationMapView.vue';
 
 const { toast } = useToast();
 
@@ -61,9 +52,6 @@ const breadcrumbs = [
     { title: 'Verifikasi Aduan', href: `/aduan-masyarakat/${props.item.id}/verifikasi` },
 ];
 
-const mapContainer = ref<HTMLElement | null>(null);
-let map: L.Map | null = null;
-let marker: L.Marker | null = null;
 
 const fields = [
     { label: 'Kategori', value: props.item.kategori_aduan_nama },
@@ -92,35 +80,6 @@ const actionFields = [
     { label: 'Updated By', value: props.item.updated_by_user?.name || '-' },
 ];
 
-onMounted(() => {
-    if (mapContainer.value && props.item.latitude && props.item.longitude) {
-        const lat = parseFloat(props.item.latitude);
-        const lng = parseFloat(props.item.longitude);
-
-        map = L.map(mapContainer.value, {
-            zoomControl: true,
-            scrollWheelZoom: true,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
-        }).addTo(map);
-
-        map.setView([lat, lng], 16);
-
-        marker = L.marker([lat, lng]).addTo(map);
-        marker.bindPopup(`<b>${props.item.judul}</b><br>${props.item.nama_lokasi || ''}`).openPopup();
-    }
-});
-
-onUnmounted(() => {
-    if (map) {
-        map.remove();
-        map = null;
-    }
-    marker = null;
-});
 
 const status = ref<'menunggu_verifikasi' | 'selesai' | 'dibatalkan' | null>(null);
 const catatan = ref('');
@@ -176,15 +135,12 @@ const handleSubmit = async () => {
     >
         <template #custom>
             <!-- Peta Lokasi -->
-            <div v-if="item.latitude && item.longitude" class="mt-4">
-                <div class="text-muted-foreground text-xs mb-2">Lokasi di Peta</div>
-                <div
-                    ref="mapContainer"
-                    class="h-[400px] w-full rounded-lg border border-border"
-                ></div>
-                <p class="text-xs text-muted-foreground mt-2">
-                    Koordinat: {{ item.latitude }}, {{ item.longitude }}
-                </p>
+            <div class="mt-4">
+                <LocationMapView
+                    :latitude="item.latitude"
+                    :longitude="item.longitude"
+                    :marker-popup-text="item.judul"
+                />
             </div>
 
             <!-- Files -->

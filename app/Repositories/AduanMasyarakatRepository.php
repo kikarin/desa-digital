@@ -6,6 +6,7 @@ use App\Models\AduanMasyarakat;
 use App\Models\AduanMasyarakatFile;
 use App\Traits\RepositoryTrait;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class AduanMasyarakatRepository
 {
@@ -21,8 +22,9 @@ class AduanMasyarakatRepository
 
     public function customIndex($data, $filterByCreatedBy = false)
     {
-        $query = $this->model->with($this->with)
-            ->select('id', 'kategori_aduan_id', 'judul', 'detail_aduan', 'latitude', 'longitude', 'nama_lokasi', 'kecamatan_id', 'desa_id', 'deskripsi_lokasi', 'jenis_aduan', 'alasan_melaporkan', 'status', 'created_by');
+        // Load relasi dengan null handling (withDefault sudah di-set di model)
+        $query = $this->model->with(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files'])
+            ->select('id', 'kategori_aduan_id', 'judul', 'detail_aduan', 'latitude', 'longitude', 'nama_lokasi', 'kecamatan_id', 'desa_id', 'deskripsi_lokasi', 'jenis_aduan', 'alasan_melaporkan', 'status', 'created_by', 'created_at');
 
         // Filter by created_by jika untuk "Aduan Saya"
         if ($filterByCreatedBy && auth()->check()) {
@@ -72,7 +74,7 @@ class AduanMasyarakatRepository
         if ($perPage === -1) {
             $allData = $query->get();
             $transformedData = $allData->map(function ($item) {
-                return $this->transformItem($item);
+                return $this->transformItemList($item);
             });
 
             $data += [
@@ -94,7 +96,7 @@ class AduanMasyarakatRepository
         $items          = $query->paginate($perPage, ['*'], 'page', $pageForLaravel);
 
         $transformedData = $items->getCollection()->map(function ($item) {
-            return $this->transformItem($item);
+            return $this->transformItemList($item);
         });
 
         $data += [
@@ -112,6 +114,32 @@ class AduanMasyarakatRepository
         return $data;
     }
 
+    /**
+     * Transform item untuk list (ringkas)
+     */
+    private function transformItemList($item)
+    {
+        // Ambil foto pertama saja (jika ada)
+        $foto = null;
+        if ($item->files && $item->files->count() > 0) {
+            $firstFile = $item->files->first();
+            if ($firstFile && $firstFile->file_type === 'foto') {
+                $foto = asset('storage/' . $firstFile->file_path);
+            }
+        }
+
+        return [
+            'id'                => $item->id,
+            'judul'             => $item->judul,
+            'tanggal'           => $item->created_at ? Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : '-',
+            'foto'              => $foto,
+            'kategori_aduan_nama' => $item->kategori_aduan?->nama ?? '-',
+        ];
+    }
+
+    /**
+     * Transform item untuk detail (lengkap)
+     */
     private function transformItem($item)
     {
         return [
@@ -131,14 +159,14 @@ class AduanMasyarakatRepository
             'jenis_aduan'       => $item->jenis_aduan,
             'alasan_melaporkan' => $item->alasan_melaporkan,
             'status'            => $item->status,
-            'files'             => $item->files->map(function ($file) {
+            'files'             => $item->files && $item->files->count() > 0 ? $item->files->map(function ($file) {
                 return [
                     'id'        => $file->id,
                     'file_path' => asset('storage/' . $file->file_path),
                     'file_type' => $file->file_type,
                     'file_name' => $file->file_name,
                 ];
-            }),
+            }) : [],
             'created_by_user'   => $item->created_by_user ? [
                 'id'   => $item->created_by_user->id,
                 'name' => $item->created_by_user->name,
@@ -163,14 +191,14 @@ class AduanMasyarakatRepository
                 'jenis_aduan'       => $item->jenis_aduan,
                 'alasan_melaporkan' => $item->alasan_melaporkan,
                 'status'            => $item->status,
-                'files'             => $item->files->map(function ($file) {
+                'files'             => $item->files && $item->files->count() > 0 ? $item->files->map(function ($file) {
                     return [
                         'id'        => $file->id,
                         'file_path' => asset('storage/' . $file->file_path),
                         'file_type' => $file->file_type,
                         'file_name' => $file->file_name,
                     ];
-                }),
+                }) : [],
             ];
         }
         return $data;
@@ -196,16 +224,16 @@ class AduanMasyarakatRepository
                 'jenis_aduan'       => $item->jenis_aduan,
                 'alasan_melaporkan' => $item->alasan_melaporkan,
                 'status'            => $item->status,
-                'files'             => $item->files->map(function ($file) {
+                'files'             => $item->files && $item->files->count() > 0 ? $item->files->map(function ($file) {
                     return [
                         'id'        => $file->id,
                         'file_path' => asset('storage/' . $file->file_path),
                         'file_type' => $file->file_type,
                         'file_name' => $file->file_name,
                     ];
-                }),
-                'created_at'        => $item->created_at?->format('Y-m-d H:i:s'),
-                'updated_at'        => $item->updated_at?->format('Y-m-d H:i:s'),
+                })->values()->toArray() : [],
+                'created_at'        => $item->created_at ? Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'updated_at'        => $item->updated_at ? Carbon::parse($item->updated_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
                 'created_by_user'   => $item->created_by_user ? [
                     'id'   => $item->created_by_user->id,
                     'name' => $item->created_by_user->name,
@@ -217,6 +245,25 @@ class AduanMasyarakatRepository
             ];
         }
         return $data;
+    }
+
+    public function customGetById($query)
+    {
+        // Pastikan relasi di-load dengan null handling
+        return $query->with([
+            'kategori_aduan' => function($q) {
+                // Tidak perlu constraint tambahan, withDefault sudah di model
+            },
+            'kecamatan' => function($q) {
+                // Tidak perlu constraint tambahan, withDefault sudah di model
+            },
+            'desa' => function($q) {
+                // Tidak perlu constraint tambahan, withDefault sudah di model
+            },
+            'created_by_user',
+            'updated_by_user',
+            'files'
+        ]);
     }
 
     public function customDataCreateUpdate($data, $record = null)
@@ -237,8 +284,13 @@ class AduanMasyarakatRepository
         if (isset($data['deleted_files']) && is_array($data['deleted_files'])) {
             foreach ($data['deleted_files'] as $fileId) {
                 $file = AduanMasyarakatFile::find($fileId);
-                if ($file) {
-                    Storage::disk('public')->delete($file->file_path);
+                // Validasi: file harus ada dan milik record yang sedang diupdate (jika update)
+                if ($file && (!$record || $file->aduan_masyarakat_id == $record->id)) {
+                    // Hapus file dari storage
+                    if (Storage::disk('public')->exists($file->file_path)) {
+                        Storage::disk('public')->delete($file->file_path);
+                    }
+                    // Hapus record dari database
                     $file->delete();
                 }
             }

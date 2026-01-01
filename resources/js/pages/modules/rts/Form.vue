@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue';
 import { useHandleFormSave } from '@/composables/useHandleFormSave';
 import FormInput from '@/pages/modules/base-page/FormInput.vue';
-import { computed } from 'vue';
+import BoundaryMapPicker from '@/components/BoundaryMapPicker.vue';
 
 const { save } = useHandleFormSave();
 
@@ -12,6 +13,7 @@ const props = defineProps<{
 }>();
 
 const rwOptions = computed(() => props.listRw || []);
+const boundary = ref<number[][]>(props.initialData?.boundary || []);
 
 const formInputs = computed(() => [
     {
@@ -43,6 +45,7 @@ const handleSave = (data: Record<string, any>) => {
     const formData: Record<string, any> = {
         ...data,
         rw_id: Number(data.rw_id),
+        boundary: boundary.value.length > 0 ? boundary.value : null,
     };
 
     if (props.mode === 'edit' && props.initialData?.id) {
@@ -61,6 +64,9 @@ const handleSave = (data: Record<string, any>) => {
 </script>
 
 <template>
-    <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
+    <div class="space-y-6">
+        <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
+        <BoundaryMapPicker v-model="boundary" />
+    </div>
 </template>
 

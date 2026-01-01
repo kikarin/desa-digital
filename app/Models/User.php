@@ -69,6 +69,7 @@ class User extends Authenticatable implements HasMedia
         'is_verifikasi',
         'reset_password_token',
         'current_role_id',
+        'resident_id',
 
         'last_login',
     ];
@@ -145,6 +146,10 @@ class User extends Authenticatable implements HasMedia
         return $this->belongsTo(User::class, 'updated_by');
     }
 
+    public function resident()
+    {
+        return $this->belongsTo(Residents::class, 'resident_id');
+    }
 
     // Todo: End Relation
 

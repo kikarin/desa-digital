@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { computed, onMounted, onUnmounted, nextTick } from 'vue';
 import GLightbox from 'glightbox';
 import 'glightbox/dist/css/glightbox.css';
+import LocationMapView from '@/components/LocationMapView.vue';
 
 const { toast } = useToast();
 
@@ -29,6 +30,8 @@ const props = defineProps<{
         jenis_usaha: string | null;
         nama_fasilitas: string | null;
         pengelola: string | null;
+        latitude?: string | null;
+        longitude?: string | null;
         rt: {
             id: number;
             nomor_rt: string;
@@ -212,6 +215,16 @@ onUnmounted(() => {
         :on-delete="handleDelete"
     >
         <template #custom>
+            <!-- Peta Lokasi -->
+            <div v-if="item.latitude && item.longitude" class="mt-6">
+                <LocationMapView
+                    :latitude="item.latitude"
+                    :longitude="item.longitude"
+                    :jenis-rumah="item.jenis_rumah"
+                    :marker-popup-text="getJenisRumahLabel(item.jenis_rumah)"
+                />
+            </div>
+
             <!-- Gallery Foto -->
             <div class="mt-6">
                 <h3 class="text-lg font-semibold mb-4">Foto</h3>

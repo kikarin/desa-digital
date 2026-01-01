@@ -7,19 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { ref, onMounted, watch } from 'vue';
 import { Search, MapPin, Navigation, X, Upload } from 'lucide-vue-next';
 import axios from 'axios';
-
-// Fix untuk default marker icon di Leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
+import LocationMapPicker from '@/components/LocationMapPicker.vue';
 
 const { toast } = useToast();
 
@@ -27,10 +18,6 @@ const props = defineProps<{
     mode: 'create' | 'edit';
     initialData?: Record<string, any>;
 }>();
-
-const mapContainer = ref<HTMLElement | null>(null);
-let map: L.Map | null = null;
-let marker: L.Marker | null = null;
 
 const formData = ref({
     kategori_aduan_id: props.initialData?.kategori_aduan_id || '',
@@ -47,12 +34,6 @@ const formData = ref({
 });
 
 const isLoading = ref(false);
-const isSearching = ref(false);
-const searchQuery = ref('');
-const searchResults = ref<Array<{ display_name: string; lat: string; lon: string; address?: any }>>([]);
-const showSearchResults = ref(false);
-const activeTab = ref<'search' | 'current'>('search');
-let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Dropdown options
 const kategoriOptions = ref<Array<{ value: number; label: string }>>([]);
@@ -64,10 +45,6 @@ const files = ref<File[]>([]);
 const filePreviews = ref<Array<{ url: string; type: 'foto' | 'video'; name: string }>>([]);
 const existingFiles = ref<Array<{ id: number; file_path: string; file_type: string; file_name: string }>>(props.initialData?.files || []);
 const deletedFileIds = ref<number[]>([]);
-
-// Koordinat pusat Desa Galuga
-const galugaLat = -6.5641311;
-const galugaLng = 106.6438673;
 
 // Load dropdown options
 onMounted(async () => {
@@ -104,35 +81,6 @@ onMounted(async () => {
         loadDesa(formData.value.kecamatan_id);
     }
 
-    // Initialize map
-    if (mapContainer.value) {
-        map = L.map(mapContainer.value, {
-            zoomControl: true,
-            scrollWheelZoom: true,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
-        }).addTo(map);
-
-        if (props.mode === 'edit' && props.initialData?.latitude && props.initialData?.longitude) {
-            const lat = parseFloat(props.initialData.latitude);
-            const lng = parseFloat(props.initialData.longitude);
-            map.setView([lat, lng], 16);
-            marker = L.marker([lat, lng]).addTo(map);
-            marker.bindPopup('<b>Lokasi Aduan</b>').openPopup();
-        } else {
-            map.setView([galugaLat, galugaLng], 14);
-        }
-
-        map.on('click', (e: L.LeafletMouseEvent) => {
-            const { lat, lng } = e.latlng;
-            setMarker(lat, lng);
-            reverseGeocode(lat, lng);
-        });
-    }
-
     // Load existing files preview
     if (existingFiles.value.length > 0) {
         filePreviews.value = existingFiles.value.map((file) => ({
@@ -143,16 +91,6 @@ onMounted(async () => {
     }
 });
 
-onUnmounted(() => {
-    if (map) {
-        map.remove();
-        map = null;
-    }
-    marker = null;
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-});
 
 const loadDesa = async (kecamatanId: number) => {
     try {
@@ -174,208 +112,20 @@ watch(() => formData.value.kecamatan_id, (newVal) => {
     }
 });
 
-const setMarker = (lat: number, lng: number) => {
-    if (!map) return;
-
-    if (marker) {
-        map.removeLayer(marker);
+// Handle location selected from LocationMapPicker
+const handleLocationSelected = (data: { lat: number; lng: number; address?: string }) => {
+    if (data.address) {
+        formData.value.deskripsi_lokasi = data.address;
+        // Extract display name from address or use coordinates
+        const addressParts = data.address.split(',');
+        formData.value.nama_lokasi = addressParts[0] || `Lokasi Aduan (${data.lat.toFixed(6)}, ${data.lng.toFixed(6)})`;
+    } else {
+        formData.value.nama_lokasi = `Lokasi Aduan (${data.lat.toFixed(6)}, ${data.lng.toFixed(6)})`;
     }
-
-    marker = L.marker([lat, lng]).addTo(map);
-    marker.bindPopup('<b>Lokasi Aduan</b>').openPopup();
-
-    formData.value.latitude = lat.toString();
-    formData.value.longitude = lng.toString();
-};
-
-const searchLocation = async () => {
-    if (searchTimeout) {
-        clearTimeout(searchTimeout);
-    }
-
-    if (!searchQuery.value.trim()) {
-        searchResults.value = [];
-        showSearchResults.value = false;
-        return;
-    }
-
-    searchTimeout = setTimeout(async () => {
-        try {
-            isSearching.value = true;
-            
-            const response = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery.value)}&limit=5&addressdetails=1&accept-language=id`,
-                {
-                    headers: {
-                        'User-Agent': 'SIGAP-Desa-Digital/1.0',
-                    },
-                }
-            );
-            
-            if (!response.ok) {
-                throw new Error('Search failed');
-            }
-            
-            const data = await response.json();
-            searchResults.value = data;
-            showSearchResults.value = data.length > 0;
-            
-            if (data.length === 0) {
-                toast({
-                    title: 'Lokasi tidak ditemukan',
-                    variant: 'default',
-                });
-            }
-        } catch (error) {
-            console.error('Search error:', error);
-            toast({
-                title: 'Gagal mencari lokasi',
-                variant: 'destructive',
-            });
-            searchResults.value = [];
-            showSearchResults.value = false;
-        } finally {
-            isSearching.value = false;
-        }
-    }, 1000);
-};
-
-const selectSearchResult = (result: { display_name: string; lat: string; lon: string; address?: any }) => {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    
-    setMarker(lat, lng);
-    
-    const address = result.address || {};
-    const road = address.road || '';
-    const village = address.village || address.suburb || '';
-    const district = address.district || address.city_district || '';
-    const city = address.city || address.county || '';
-    
-    const alamatParts = [road, village, district, city].filter(Boolean);
-    const alamat = alamatParts.join(', ');
-    
-    formData.value.nama_lokasi = result.display_name;
-    formData.value.deskripsi_lokasi = alamat || result.display_name;
-    
-    searchQuery.value = '';
-    searchResults.value = [];
-    showSearchResults.value = false;
-    
     toast({
-        title: 'Lokasi dipilih',
+        title: 'Lokasi berhasil diambil',
         variant: 'success',
     });
-};
-
-const useCurrentLocation = () => {
-    if (!navigator.geolocation) {
-        toast({
-            title: 'Geolocation tidak didukung oleh browser Anda',
-            variant: 'destructive',
-        });
-        return;
-    }
-
-    isLoading.value = true;
-    
-    const options = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-    };
-    
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const lat = position.coords.latitude;
-            const lng = position.coords.longitude;
-            const accuracy = position.coords.accuracy;
-            
-            if (accuracy > 100) {
-                toast({
-                    title: `Lokasi ditemukan dengan akurasi ±${Math.round(accuracy)}m. Pastikan GPS aktif untuk hasil lebih akurat.`,
-                    variant: 'default',
-                });
-            }
-            
-            setMarker(lat, lng);
-            reverseGeocode(lat, lng);
-            isLoading.value = false;
-        },
-        (error) => {
-            console.error('Geolocation error:', error);
-            let errorMessage = 'Gagal mendapatkan lokasi saat ini';
-            
-            switch (error.code) {
-                case error.PERMISSION_DENIED:
-                    errorMessage = 'Akses lokasi ditolak. Silakan izinkan akses lokasi di pengaturan browser.';
-                    break;
-                case error.POSITION_UNAVAILABLE:
-                    errorMessage = 'Informasi lokasi tidak tersedia. Pastikan GPS aktif.';
-                    break;
-                case error.TIMEOUT:
-                    errorMessage = 'Waktu tunggu habis. Pastikan GPS aktif dan coba lagi.';
-                    break;
-            }
-            
-            toast({
-                title: errorMessage,
-                variant: 'destructive',
-            });
-            isLoading.value = false;
-        },
-        options
-    );
-};
-
-const reverseGeocode = async (lat: number, lng: number) => {
-    try {
-        isLoading.value = true;
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=id`,
-            {
-                headers: {
-                    'User-Agent': 'SIGAP-Desa-Digital/1.0',
-                },
-            }
-        );
-        
-        if (!response.ok) {
-            throw new Error('Reverse geocoding failed');
-        }
-        
-        const data = await response.json();
-        const address = data.address || {};
-        const road = address.road || '';
-        const village = address.village || address.suburb || '';
-        const district = address.district || address.city_district || '';
-        const city = address.city || address.county || '';
-        
-        const alamatParts = [road, village, district, city].filter(Boolean);
-        const alamat = alamatParts.join(', ');
-        
-        formData.value.nama_lokasi = data.display_name || alamat || 'Lokasi Aduan';
-        formData.value.deskripsi_lokasi = alamat || data.display_name || '';
-        
-        toast({
-            title: 'Lokasi berhasil diambil',
-            variant: 'success',
-        });
-    } catch (error) {
-        console.error('Reverse geocoding error:', error);
-        formData.value.nama_lokasi = `Lokasi Aduan (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
-        formData.value.deskripsi_lokasi = '';
-        
-        toast({
-            title: 'Gagal mengambil detail lokasi, silakan isi manual',
-            variant: 'default',
-        });
-    } finally {
-        isLoading.value = false;
-    }
 };
 
 const handleFilesChange = (event: Event) => {
@@ -564,123 +314,19 @@ const handleSave = () => {
         </Card>
 
         <!-- Lokasi Aduan -->
+        <LocationMapPicker
+            v-model:latitude="formData.latitude"
+            v-model:longitude="formData.longitude"
+            marker-popup-text="Lokasi Aduan"
+            @location-selected="handleLocationSelected"
+        />
+
+        <!-- Informasi Lokasi -->
         <Card>
             <CardHeader>
-                <CardTitle class="text-lg">Lokasi Aduan</CardTitle>
+                <CardTitle class="text-lg">Informasi Lokasi</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
-                <!-- Tabs -->
-                <div class="flex gap-2 border-b border-border">
-                    <button
-                        type="button"
-                        @click="activeTab = 'search'"
-                        :class="[
-                            'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                            activeTab === 'search'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-muted-foreground hover:text-foreground'
-                        ]"
-                    >
-                        <div class="flex items-center gap-2">
-                            <Search class="w-4 h-4" />
-                            Cari Lokasi
-                        </div>
-                    </button>
-                    <button
-                        type="button"
-                        @click="activeTab = 'current'"
-                        :class="[
-                            'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
-                            activeTab === 'current'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-muted-foreground hover:text-foreground'
-                        ]"
-                    >
-                        <div class="flex items-center gap-2">
-                            <Navigation class="w-4 h-4" />
-                            Lokasi Saat Ini
-                        </div>
-                    </button>
-                </div>
-
-                <!-- Search Tab -->
-                <div v-if="activeTab === 'search'" class="space-y-3">
-                    <div class="relative">
-                        <div class="relative">
-                            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                            <Input
-                                v-model="searchQuery"
-                                @input="searchLocation"
-                                @keyup.enter="searchLocation"
-                                placeholder="Cari alamat atau nama tempat..."
-                                class="pl-10"
-                                :disabled="isSearching"
-                            />
-                            <div
-                                v-if="isSearching"
-                                class="absolute right-3 top-1/2 transform -translate-y-1/2"
-                            >
-                                <div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                            </div>
-                        </div>
-                        
-                        <div
-                            v-if="showSearchResults && searchResults.length > 0"
-                            class="absolute z-[9999] w-full mt-1 bg-card border border-border rounded-md shadow-lg max-h-60 overflow-y-auto"
-                        >
-                            <div
-                                v-for="(result, index) in searchResults"
-                                :key="index"
-                                @click="selectSearchResult(result)"
-                                class="px-4 py-3 hover:bg-accent cursor-pointer border-b border-border last:border-b-0 transition-colors"
-                            >
-                                <div class="flex items-start gap-2">
-                                    <MapPin class="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-foreground truncate">
-                                            {{ result.display_name }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <p class="text-xs text-muted-foreground">
-                        Ketik nama jalan, tempat, atau alamat untuk mencari lokasi
-                    </p>
-                </div>
-
-                <!-- Current Location Tab -->
-                <div v-if="activeTab === 'current'" class="space-y-3">
-                    <Button
-                        type="button"
-                        @click="useCurrentLocation"
-                        :disabled="isLoading"
-                        variant="default"
-                        class="w-full"
-                    >
-                        <Navigation class="w-4 h-4 mr-2" />
-                        {{ isLoading ? 'Memuat Lokasi...' : 'Gunakan Lokasi Saat Ini' }}
-                    </Button>
-                    <p class="text-xs text-muted-foreground">
-                        Izinkan akses lokasi browser untuk menggunakan posisi saat ini
-                    </p>
-                </div>
-
-                <!-- Map -->
-                <div class="space-y-2">
-                    <p class="text-sm text-muted-foreground">
-                        Atau klik di peta untuk memilih lokasi secara manual
-                    </p>
-                    <div
-                        ref="mapContainer"
-                        class="relative z-0 h-[400px] w-full rounded-lg border border-border"
-                    ></div>
-                    <p class="text-xs text-muted-foreground">
-                        Koordinat: {{ formData.latitude && formData.longitude ? `${formData.latitude}, ${formData.longitude}` : 'Belum dipilih' }}
-                    </p>
-                </div>
-
                 <!-- Kecamatan & Desa -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ResidentStatusSeeder::class);
         $this->call(AssistanceItemSeeder::class);
         $this->call(KategoriAduanSeeder::class);
+        $this->call(KategoriProposalSeeder::class);
         $this->call(RwsSeeder::class);
         $this->call(RtsSeeder::class);
         $this->call(HousesSeeder::class);

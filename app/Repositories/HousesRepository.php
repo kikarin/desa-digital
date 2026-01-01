@@ -24,7 +24,7 @@ class HousesRepository
         $query = $this->model->with(['rt.rw', 'families.residents' => function ($query) {
             $query->with('status');
         }])
-            ->select('houses.id', 'houses.rt_id', 'houses.nomor_rumah', 'houses.jenis_rumah', 'houses.keterangan', 'houses.fotos',
+            ->select('houses.id', 'houses.rt_id', 'houses.nomor_rumah', 'houses.jenis_rumah', 'houses.keterangan', 'houses.fotos', 'houses.latitude', 'houses.longitude',
                      'rts.nomor_rt', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
             ->leftJoin('rts', 'houses.rt_id', '=', 'rts.id')
             ->leftJoin('rws', 'rts.rw_id', '=', 'rws.id');
@@ -101,6 +101,8 @@ class HousesRepository
                     'keterangan' => $house->keterangan,
                     'total_residents' => $totalResidents,
                     'foto_url' => $this->getFirstFotoUrl($house),
+                    'latitude' => $house->latitude,
+                    'longitude' => $house->longitude,
                 ];
             });
 
@@ -237,7 +239,14 @@ class HousesRepository
             }
             
             $residents = [];
+            $families = [];
             foreach ($item->families as $family) {
+                $families[] = [
+                    'id' => $family->id,
+                    'no_kk' => $family->no_kk,
+                    'status' => $family->status,
+                ];
+                
                 foreach ($family->residents as $resident) {
                     $residents[] = [
                         'id' => $resident->id,
@@ -254,6 +263,12 @@ class HousesRepository
             }
             
             $data['residents'] = $residents;
+            $data['families'] = $families;
+            
+            // Pastikan item juga punya families untuk kompatibilitas
+            if (isset($data['item']) && is_object($data['item'])) {
+                $data['item']->families = $families;
+            }
         }
         
         return $data;

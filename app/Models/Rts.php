@@ -24,6 +24,11 @@ class Rts extends Model
         'rw_id',
         'nomor_rt',
         'keterangan',
+        'boundary',
+    ];
+
+    protected $casts = [
+        'boundary' => 'array',
     ];
 
     public function getActivitylogOptions(): LogOptions

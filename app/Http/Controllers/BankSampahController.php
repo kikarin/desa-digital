@@ -55,5 +55,18 @@ class BankSampahController extends Controller implements HasMiddleware
             ],
         ]);
     }
+
+    public function apiShow($id)
+    {
+        $item = $this->repository->getById($id);
+        if (!$item) {
+            return response()->json(['error' => 'Bank Sampah not found'], 404);
+        }
+
+        $data = $this->commonData + ['item' => $item];
+        $data = $this->repository->customShow($data, $item);
+        
+        return response()->json($data);
+    }
 }
 

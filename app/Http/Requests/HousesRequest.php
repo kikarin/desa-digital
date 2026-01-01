@@ -23,6 +23,8 @@ class HousesRequest extends FormRequest
             'fotos.*'     => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,bmp,svg|max:' . $maxFileSizeInMB,
             'deleted_media_ids' => 'nullable|array',
             'deleted_media_ids.*' => 'nullable|integer',
+            'latitude'    => 'nullable|numeric|between:-90,90',
+            'longitude'   => 'nullable|numeric|between:-180,180',
         ];
 
         $jenisRumah = $this->jenis_rumah;

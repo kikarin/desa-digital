@@ -69,5 +69,10 @@ class Residents extends Model
     {
         return $this->belongsTo(User::class, 'updated_by')->select(['id', 'name']);
     }
+
+    public function user()
+    {
+        return $this->hasOne(User::class, 'resident_id');
+    }
 }
 

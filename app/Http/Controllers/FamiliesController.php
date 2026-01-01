@@ -112,6 +112,26 @@ class FamiliesController extends Controller implements HasMiddleware
         return response()->json(['data' => $residents]);
     }
 
+    public function apiShow($id)
+    {
+        $item = $this->repository->getById($id);
+        if (!$item) {
+            return response()->json(['error' => 'Family not found'], 404);
+        }
+
+        $data = $this->commonData + [
+            'item' => $item,
+        ];
+        $data = $this->repository->customShow($data, $item);
+        
+        // Convert item to array untuk JSON response
+        if (isset($data['item']) && is_object($data['item'])) {
+            $data['item'] = $data['item']->toArray();
+        }
+        
+        return response()->json($data);
+    }
+
     public function setKepalaKeluarga(Request $request, $id)
     {
         $request->validate([

@@ -1,76 +1,102 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { onMounted, onUnmounted, ref } from 'vue';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import WelcomeMap from '@/components/WelcomeMap.vue';
+import HouseStats from '@/components/HouseStats.vue';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { X } from 'lucide-vue-next';
+import axios from 'axios';
 
 const page = usePage();
 
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+// Filter state - menggunakan null untuk "tidak ada filter"
+const selectedRwId = ref<string | null>(null);
+const selectedRtId = ref<string | null>(null);
+
+// Options
+const rwOptions = ref<{ value: string; label: string }[]>([]);
+const rtOptions = ref<{ value: string; label: string; rw_id: number }[]>([]);
+
+// Filtered RT options berdasarkan RW yang dipilih
+const filteredRtOptions = computed(() => {
+    if (!selectedRwId.value) {
+        return [];
+    }
+    return rtOptions.value.filter(rt => rt.rw_id === Number(selectedRwId.value));
 });
 
-const mapContainer = ref<HTMLElement | null>(null);
-let map: L.Map | null = null;
+// Load RW dan RT options
+const loadFilterOptions = async () => {
+    try {
+        // Load RW
+        const rwResponse = await axios.get('/api/rws', { params: { per_page: -1 } });
+        if (rwResponse.data?.data) {
+            rwOptions.value = rwResponse.data.data.map((rw: any) => ({
+                value: String(rw.id),
+                label: `RW${rw.nomor_rw} - ${rw.desa}`,
+            }));
+        }
 
-onMounted(() => {
-    if (mapContainer.value) {
-        const galugaLat = -6.5641311;
-        const galugaLng = 106.6438673;
+        // Load RT
+        const rtResponse = await axios.get('/api/rts', { params: { per_page: -1 } });
+        if (rtResponse.data?.data) {
+            rtOptions.value = rtResponse.data.data.map((rt: any) => ({
+                value: String(rt.id),
+                label: `RT${rt.nomor_rt} - RW${rt.nomor_rw || rt.rw?.nomor_rw || ''}`,
+                rw_id: rt.rw_id,
+            }));
+        }
+    } catch (error) {
+        console.error('Error loading filter options:', error);
+    }
+};
 
-        const galugaBoundary: [number, number][] = [
-  [-6.5574, 106.6298],
-  [-6.5559, 106.6312],
-  [-6.5532, 106.6347],
-  [-6.5521, 106.6395],
-  [-6.5538, 106.6459],
-  [-6.5581, 106.6508],
-  [-6.5637, 106.6532],
-  [-6.5704, 106.6519],
-  [-6.5761, 106.6473],
-  [-6.5789, 106.6405],
-  [-6.5764, 106.6338],
-  [-6.5718, 106.6301],
-  [-6.5574, 106.6298], 
-];
+// Handler untuk RW change
+const handleRwChange = (val: any) => {
+    selectedRwId.value = val && val !== 'all' ? String(val) : null;
+};
 
+// Handler untuk RT change
+const handleRtChange = (val: any) => {
+    selectedRtId.value = val && val !== 'all' ? String(val) : null;
+};
 
-        map = L.map(mapContainer.value, {
-            zoomControl: true,
-            scrollWheelZoom: true,
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19,
-        }).addTo(map);
-
-        const boundaryPolygon = L.polygon(galugaBoundary, {
-            color: '#dc2626', // Warna merah
-            weight: 3,
-            fillColor: '#dc2626',
-            fillOpacity: 0.1, // Transparan sedikit
-            dashArray: '10, 10', // Garis putus-putus
-        }).addTo(map);
-
-        // Fit map ke boundary area
-        map.fitBounds(boundaryPolygon.getBounds(), {
-            padding: [20, 20], // Padding di sekitar boundary
-        });
+// Watch RW change - reset RT
+watch(selectedRwId, (newRwId) => {
+    if (!newRwId || newRwId === 'all') {
+        selectedRtId.value = null;
+    } else {
+        // Reset RT jika RW berubah
+        const currentRt = rtOptions.value.find(rt => String(rt.value) === selectedRtId.value);
+        if (currentRt && currentRt.rw_id !== Number(newRwId)) {
+            selectedRtId.value = null;
+        }
     }
 });
 
-onUnmounted(() => {
-    if (map) {
-        map.remove();
-        map = null;
+// Filter object untuk pass ke child components
+const filterParams = computed(() => {
+    const params: { rw_id?: number; rt_id?: number } = {};
+    if (selectedRwId.value && selectedRwId.value !== 'all') {
+        params.rw_id = Number(selectedRwId.value);
     }
+    if (selectedRtId.value && selectedRtId.value !== 'all') {
+        params.rt_id = Number(selectedRtId.value);
+    }
+    return params;
 });
+
+// Clear filter
+const clearFilter = () => {
+    selectedRwId.value = null;
+    selectedRtId.value = null;
+};
+
+// Load options on mount
+loadFilterOptions();
 </script>
-
 <template>
     <Head title="SIGAP - Sistem Informasi Galuga Pintar">
         <link rel="preconnect" href="https://rsms.me/" />
@@ -139,10 +165,73 @@ onUnmounted(() => {
                     <h3 class="mb-2 text-2xl font-semibold text-foreground">Peta Wilayah Desa Galuga</h3>
                     <p class="text-muted-foreground">Lokasi Desa Galuga, Kecamatan Cibungbulang, Kabupaten Bogor, Jawa Barat</p>
                 </div>
-                <div
-                    ref="mapContainer"
-                    class="relative z-0 h-[600px] w-full rounded-lg border border-border shadow-lg"
-                ></div>
+                
+                <!-- Filter Section -->
+                <div class="mb-4 flex flex-wrap items-end gap-4 rounded-lg border bg-card p-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <Label for="filter-rw" class="mb-2 block text-sm font-medium">Filter RW</Label>
+                        <Select
+                            :model-value="selectedRwId || 'all'"
+                            @update:model-value="handleRwChange"
+                        >
+                            <SelectTrigger id="filter-rw" class="w-full">
+                                <SelectValue placeholder="Pilih RW (Semua)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua RW</SelectItem>
+                                <SelectItem
+                                    v-for="rw in rwOptions"
+                                    :key="rw.value"
+                                    :value="rw.value"
+                                >
+                                    {{ rw.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    
+                    <div class="flex-1 min-w-[200px]">
+                        <Label for="filter-rt" class="mb-2 block text-sm font-medium">Filter RT</Label>
+                        <Select
+                            :model-value="selectedRtId || 'all'"
+                            @update:model-value="handleRtChange"
+                            :disabled="!selectedRwId || selectedRwId === 'all'"
+                        >
+                            <SelectTrigger id="filter-rt" class="w-full" :disabled="!selectedRwId || selectedRwId === 'all'">
+                                <SelectValue :placeholder="selectedRwId && selectedRwId !== 'all' ? 'Pilih RT (Semua)' : 'Pilih RW terlebih dahulu'" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Semua RT</SelectItem>
+                                <SelectItem
+                                    v-for="rt in filteredRtOptions"
+                                    :key="rt.value"
+                                    :value="rt.value"
+                                >
+                                    {{ rt.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    
+                    <Button
+                        v-if="selectedRwId || selectedRtId"
+                        variant="outline"
+                        @click="clearFilter"
+                        class="gap-2"
+                    >
+                        <X class="h-4 w-4" />
+                        Reset Filter
+                    </Button>
+                </div>
+                
+                <WelcomeMap height="600px" :filter-params="filterParams" />
+            </div>
+        </section>
+
+        <!-- Statistik Section -->
+        <section class="py-8 bg-muted/30">
+            <div class="container mx-auto px-44">
+                <HouseStats :filter-params="filterParams" />
             </div>
         </section>
 

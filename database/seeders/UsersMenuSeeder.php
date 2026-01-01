@@ -98,6 +98,13 @@ class UsersMenuSeeder extends Seeder
                         'urutan'        => 3,
                         'permission_id' => 'Kategori Aduan Show',
                     ],
+                    [
+                        'nama'          => 'Kategori Proposal',
+                        'kode'          => 'DATA-MASTER-KATEGORI-PROPOSAL',
+                        'url'           => '/data-master/kategori-proposal',
+                        'urutan'        => 4,
+                        'permission_id' => 'Kategori Proposal Show',
+                    ],
                 ],
             ],
             [
@@ -199,6 +206,31 @@ class UsersMenuSeeder extends Seeder
                 'rel'           => 0,
                 'urutan'        => 8,
                 'permission_id' => 'Layanan Darurat Show',
+            ],
+            [
+                'nama'          => 'Pengajuan Proposal',
+                'kode'          => 'PENGAJUAN-PROPOSAL',
+                'url'           => '/pengajuan-proposal',
+                'icon'          => 'Proportions',
+                'rel'           => 0,
+                'urutan'        => 9,
+                'permission_id' => '',
+                'children'      => [
+                    [
+                        'nama'          => 'Pengajuan Proposal',
+                        'kode'          => 'PENGAJUAN-PROPOSAL-ADMIN',
+                        'url'           => '/pengajuan-proposal',
+                        'urutan'        => 1,
+                        'permission_id' => 'Pengajuan Proposal Show',
+                    ],
+                    [
+                        'nama'          => 'Pengajuan Proposal Saya',
+                        'kode'          => 'PENGAJUAN-PROPOSAL-SAYA',
+                        'url'           => '/pengajuan-proposal-saya',
+                        'urutan'        => 2,
+                        'permission_id' => 'Pengajuan Proposal Saya Show',
+                    ],
+                ],
             ],
             [
                 'nama'          => 'Users',

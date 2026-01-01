@@ -91,5 +91,79 @@ class HousesController extends Controller implements HasMiddleware
             ],
         ]);
     }
+
+    public function apiShow($id)
+    {
+        $item = $this->repository->getById($id);
+        if (!$item) {
+            return response()->json(['error' => 'House not found'], 404);
+        }
+
+        $data = $this->commonData + [
+            'item' => $item,
+        ];
+        $data = $this->repository->customShow($data, $item);
+        
+        // Convert item to array untuk JSON response
+        if (isset($data['item']) && is_object($data['item'])) {
+            $itemArray = $data['item']->toArray();
+            // Pastikan families dan fotos ter-include
+            if (isset($data['families'])) {
+                $itemArray['families'] = $data['families'];
+            }
+            if (isset($data['fotos'])) {
+                $itemArray['fotos'] = $data['fotos'];
+            }
+            $data['item'] = $itemArray;
+        }
+        
+        return response()->json($data);
+    }
+
+    public function apiStats(Request $request)
+    {
+        $model = $this->repository->getInstanceModel();
+        $query = $model::query();
+        
+        // Apply filters
+        if ($request->has('rw_id') && $request->rw_id) {
+            $query->whereHas('rt', function ($q) use ($request) {
+                $q->where('rw_id', $request->rw_id);
+            });
+        }
+        
+        if ($request->has('rt_id') && $request->rt_id) {
+            $query->where('rt_id', $request->rt_id);
+        }
+        
+        $stats = $query->selectRaw('jenis_rumah, COUNT(*) as count')
+            ->groupBy('jenis_rumah')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->jenis_rumah => $item->count];
+            });
+
+        // Get stats for other modules (with filters if needed)
+        $bankSampahCount = \App\Models\BankSampah::count();
+        $aduanMasyarakatCount = \App\Models\AduanMasyarakat::count();
+        $layananDaruratCount = \App\Models\LayananDarurat::count();
+        $pengajuanProposalCount = \App\Models\PengajuanProposal::count();
+
+        return response()->json([
+            'stats' => [
+                'RUMAH_TINGGAL' => $stats['RUMAH_TINGGAL'] ?? 0,
+                'KONTRAKAN' => $stats['KONTRAKAN'] ?? 0,
+                'WARUNG_TOKO_USAHA' => $stats['WARUNG_TOKO_USAHA'] ?? 0,
+                'FASILITAS_UMUM' => $stats['FASILITAS_UMUM'] ?? 0,
+            ],
+            'total' => array_sum($stats->toArray()),
+            'modules' => [
+                'bank_sampah' => $bankSampahCount,
+                'aduan_masyarakat' => $aduanMasyarakatCount,
+                'layanan_darurat' => $layananDaruratCount,
+                'pengajuan_proposal' => $pengajuanProposalCount,
+            ],
+        ]);
+    }
 }
 

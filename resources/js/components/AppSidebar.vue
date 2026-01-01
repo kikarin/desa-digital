@@ -46,6 +46,7 @@ const iconMap: Record<string, any> = {
     MessageSquare: LucideIcons.MessageSquare,
     Phone: LucideIcons.Phone,
     PhoneCall: LucideIcons.PhoneCall,
+    Proportions: LucideIcons.Proportions,
 };
 
 const fetchMenus = async () => {

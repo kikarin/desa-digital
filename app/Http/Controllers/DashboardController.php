@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Repositories\DashboardRepository;
 use Illuminate\Http\Request;
 use App\Traits\BaseTrait;
+use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
@@ -18,5 +19,16 @@ class DashboardController extends Controller
         $this->request    = $request;
         $this->initialize();
         $this->commonData['kode_first_menu'] = $this->kode_menu;
+    }
+
+    public function index()
+    {
+        $statistics = $this->repository->getStatistics();
+        $recentActivities = $this->repository->getRecentActivities(5);
+
+        return Inertia::render('Dashboard', [
+            'statistics' => $statistics,
+            'recentActivities' => $recentActivities,
+        ]);
     }
 }

@@ -21,7 +21,7 @@ class RtsRepository
     public function customIndex($data)
     {
         $query = $this->model->with('rw')
-            ->select('rts.id', 'rts.rw_id', 'rts.nomor_rt', 'rts.keterangan', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
+            ->select('rts.id', 'rts.rw_id', 'rts.nomor_rt', 'rts.keterangan', 'rts.boundary', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
             ->leftJoin('rws', 'rts.rw_id', '=', 'rws.id');
 
         if (request('filter_rw_id')) {
@@ -75,6 +75,7 @@ class RtsRepository
                     'kecamatan'  => $rt->kecamatan,
                     'kabupaten'  => $rt->kabupaten,
                     'keterangan' => $rt->keterangan,
+                    'boundary'   => $rt->boundary,
                     'has_account' => $hasAccount,
                 ];
             });

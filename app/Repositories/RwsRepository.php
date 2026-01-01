@@ -27,7 +27,7 @@ class RwsRepository
      */
     public function customIndex($data)
     {
-        $query = $this->model->select('id', 'nomor_rw', 'desa', 'kecamatan', 'kabupaten');
+        $query = $this->model->select('id', 'nomor_rw', 'desa', 'kecamatan', 'kabupaten', 'boundary');
 
         // Cari data berdasarkan keyword
         if (request('search')) {
@@ -74,6 +74,7 @@ class RwsRepository
                     'desa'       => $rws->desa,
                     'kecamatan'  => $rws->kecamatan,
                     'kabupaten'  => $rws->kabupaten,
+                    'boundary'   => $rws->boundary,
                     'has_account' => $hasAccount,
                 ];
             });

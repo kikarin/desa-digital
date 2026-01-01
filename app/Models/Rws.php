@@ -23,6 +23,11 @@ class Rws extends Model
         'desa',
         'kecamatan',
         'kabupaten',
+        'boundary',
+    ];
+
+    protected $casts = [
+        'boundary' => 'array',
     ];
 
     /**
