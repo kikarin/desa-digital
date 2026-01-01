@@ -206,6 +206,94 @@ class AduanMasyarakatController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            // FIX: Untuk PUT request dengan multipart/form-data, Laravel tidak membaca dengan benar
+            // Kita perlu merge data dari $_POST dan $_FILES langsung
+            if ($request->method() === 'PUT' && str_contains($request->header('Content-Type', ''), 'multipart/form-data')) {
+                // Merge dengan $_POST
+                $postData = $_POST ?? [];
+                
+                // Merge POST data ke request
+                foreach ($postData as $key => $value) {
+                    // Handle array notation (deleted_files[])
+                    if (str_ends_with($key, '[]')) {
+                        $baseKey = rtrim($key, '[]');
+                        if (!$request->has($baseKey)) {
+                            $request->merge([$baseKey => []]);
+                        }
+                        $existing = $request->input($baseKey, []);
+                        if (!is_array($existing)) {
+                            $existing = [$existing];
+                        }
+                        $existing[] = $value;
+                        $request->merge([$baseKey => $existing]);
+                    } else {
+                        if (!$request->has($key)) {
+                            $request->merge([$key => $value]);
+                        }
+                    }
+                }
+                
+                // Handle files dari $_FILES
+                $filesData = $_FILES ?? [];
+                
+                if (!empty($filesData)) {
+                    foreach ($filesData as $key => $fileData) {
+                        // Handle single file
+                        if (isset($fileData['tmp_name']) && !is_array($fileData['tmp_name'])) {
+                            if (is_uploaded_file($fileData['tmp_name'])) {
+                                $uploadedFile = \Illuminate\Http\UploadedFile::createFromBase(
+                                    new \Symfony\Component\HttpFoundation\File\UploadedFile(
+                                        $fileData['tmp_name'],
+                                        $fileData['name'],
+                                        $fileData['type'],
+                                        $fileData['error'],
+                                        true
+                                    )
+                                );
+                                
+                                // Handle array notation (files[])
+                                if (str_ends_with($key, '[]')) {
+                                    $baseKey = rtrim($key, '[]');
+                                    $existing = $request->file($baseKey);
+                                    if (!$existing) {
+                                        $request->files->set($baseKey, [$uploadedFile]);
+                                    } else {
+                                        if (!is_array($existing)) {
+                                            $existing = [$existing];
+                                        }
+                                        $existing[] = $uploadedFile;
+                                        $request->files->set($baseKey, $existing);
+                                    }
+                                } else {
+                                    $request->files->set($key, $uploadedFile);
+                                }
+                            }
+                        }
+                        // Handle multiple files
+                        elseif (isset($fileData['tmp_name']) && is_array($fileData['tmp_name'])) {
+                            $files = [];
+                            foreach ($fileData['tmp_name'] as $index => $tmpName) {
+                                if (is_uploaded_file($tmpName)) {
+                                    $files[] = \Illuminate\Http\UploadedFile::createFromBase(
+                                        new \Symfony\Component\HttpFoundation\File\UploadedFile(
+                                            $tmpName,
+                                            $fileData['name'][$index],
+                                            $fileData['type'][$index],
+                                            $fileData['error'][$index],
+                                            true
+                                        )
+                                    );
+                                }
+                            }
+                            if (!empty($files)) {
+                                $baseKey = str_ends_with($key, '[]') ? rtrim($key, '[]') : $key;
+                                $request->files->set($baseKey, $files);
+                            }
+                        }
+                    }
+                }
+            }
+            
             $user = $request->user();
             
             if (!$user) {
@@ -331,6 +419,20 @@ class AduanMasyarakatController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * Update aduan dengan file (menggunakan POST karena PUT tidak support multipart/form-data dengan baik)
+     * 
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateWithFiles(Request $request, $id)
+    {
+        // Panggil method update yang sama, tapi dengan POST method
+        // POST method akan membaca multipart/form-data dengan benar
+        return $this->update($request, $id);
     }
 
     /**

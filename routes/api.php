@@ -36,6 +36,9 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     Route::get('/aduan-masyarakat/kecamatan', [AduanMasyarakatController::class, 'getKecamatan']);
     Route::get('/aduan-masyarakat/desa/{kecamatanId}', [AduanMasyarakatController::class, 'getDesa']);
     
+    // Route khusus untuk update dengan file (POST karena PUT tidak support multipart/form-data dengan baik)
+    Route::post('/aduan-masyarakat/{id}/update', [AduanMasyarakatController::class, 'updateWithFiles']);
+    
     // Aduan Masyarakat (Aduan Saya) - harus SETELAH route spesifik
     Route::apiResource('aduan-masyarakat', AduanMasyarakatController::class);
 });
