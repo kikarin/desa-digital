@@ -367,11 +367,11 @@ const getItemFields = (module: string, item: any) => {
             { label: 'Kategori Proposal', value: item.kategori_proposal_nama || '-' },
             { label: 'Nama Pengaju', value: item.resident_nama || '-' },
             { label: 'NIK Pengaju', value: item.resident_nik || '-' },
+            { label: 'Nomor Telepon Pengaju', value: item.nomor_telepon_pengaju || '-' },
             { label: 'Usulan Anggaran', value: item.usulan_anggaran_formatted || '-' },
             { label: 'Status', value: item.status_label || item.status || '-' },
-            { label: 'Kecamatan', value: item.kecamatan || '-' },
-            { label: 'Kelurahan/Desa', value: item.kelurahan_desa || '-' },
-            { label: 'Deskripsi Lokasi Tambahan', value: item.deskripsi_lokasi_tambahan || '-' },
+            { label: 'Nama Lokasi', value: item.nama_lokasi || '-' },
+            { label: 'Alamat', value: item.alamat || '-' },
             { label: 'Deskripsi Kegiatan', value: item.deskripsi_kegiatan || '-' },
         ];
     }

@@ -28,6 +28,7 @@ class PengajuanProposalRepository
             'nama_kegiatan',
             'usulan_anggaran',
             'status',
+            'thumbnail_foto_banner',
             'latitude',
             'longitude',
             'created_at'
@@ -36,12 +37,16 @@ class PengajuanProposalRepository
         // Filter untuk pengajuan saya (hanya milik user yang login)
         if ($isPengajuanSaya) {
             $user = Auth::user();
-            if ($user && $user->resident_id) {
-                $query->where('resident_id', $user->resident_id);
-            } else {
-                // Jika user tidak punya resident_id, filter berdasarkan created_by
+            if ($user) {
+                // Filter berdasarkan created_by (karena resident_id auto-set dari user)
                 $query->where('created_by', $user->id);
             }
+        }
+        
+        // Filter by created_by dari request (untuk API)
+        $filterCreatedBy = $data['filter_created_by'] ?? request('filter_created_by');
+        if ($filterCreatedBy) {
+            $query->where('created_by', $filterCreatedBy);
         }
 
         // Search
@@ -67,7 +72,11 @@ class PengajuanProposalRepository
 
         // Filter by kategori
         if (request('kategori_proposal_id')) {
-            $query->where('kategori_proposal_id', request('kategori_proposal_id'));
+            $kategoriId = request('kategori_proposal_id');
+            // Validasi bahwa kategori_proposal_id adalah integer dan exists
+            if (is_numeric($kategoriId) && \App\Models\KategoriProposal::where('id', $kategoriId)->exists()) {
+                $query->where('kategori_proposal_id', $kategoriId);
+            }
         }
 
         // Sorting
@@ -145,9 +154,10 @@ class PengajuanProposalRepository
             'usulan_anggaran_formatted' => 'Rp ' . number_format($item->usulan_anggaran, 0, ',', '.'),
             'status' => $item->status,
             'status_label' => $item->status_label,
+            'thumbnail_foto_banner' => $item->thumbnail_foto_banner ? asset('storage/' . $item->thumbnail_foto_banner) : null,
             'latitude' => $item->latitude,
             'longitude' => $item->longitude,
-            'created_at' => $item->created_at?->format('Y-m-d H:i:s'),
+            'created_at' => $item->created_at ? \Carbon\Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
         ];
     }
 
@@ -195,7 +205,7 @@ class PengajuanProposalRepository
                 'longitude' => $item->longitude,
                 'nama_lokasi' => $item->nama_lokasi,
                 'alamat' => $item->alamat,
-                'thumbnail_foto_banner' => $item->thumbnail_foto_banner,
+                'thumbnail_foto_banner' => $item->thumbnail_foto_banner ? asset('storage/' . $item->thumbnail_foto_banner) : null,
                 'tanda_tangan_digital' => $item->tanda_tangan_digital,
                 'status' => $item->status,
                 'status_label' => $item->status_label,

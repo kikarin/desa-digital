@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AduanMasyarakatController;
 use App\Http\Controllers\Api\LayananDaruratController;
 use App\Http\Controllers\Api\PengajuanSuratController;
+use App\Http\Controllers\Api\PengajuanProposalController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -52,6 +53,14 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     Route::get('/pengajuan-surat/{id}/export-pdf', [PengajuanSuratController::class, 'exportPdf']);
     Route::post('/pengajuan-surat/{id}/update', [PengajuanSuratController::class, 'update']); // POST untuk update dengan file
     Route::apiResource('pengajuan-surat', PengajuanSuratController::class);
+    
+    // Pengajuan Proposal - Proposal Saya
+    Route::get('/pengajuan-proposal/kategori', [PengajuanProposalController::class, 'getKategoriProposal']);
+    Route::get('/pengajuan-proposal/{id}/export-pdf', [PengajuanProposalController::class, 'exportPdf']);
+    Route::post('/pengajuan-proposal/{id}/update', [PengajuanProposalController::class, 'update']); // POST untuk update dengan file
+    Route::get('/pengajuan-proposal', [PengajuanProposalController::class, 'index']);
+    Route::get('/pengajuan-proposal/{id}', [PengajuanProposalController::class, 'show']);
+    Route::post('/pengajuan-proposal', [PengajuanProposalController::class, 'store']);
 });
 
 // Existing routes
