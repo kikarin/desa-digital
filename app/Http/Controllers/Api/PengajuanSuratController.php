@@ -428,8 +428,14 @@ class PengajuanSuratController extends Controller
                 $updateData['tanggal_surat'] = $request->tanggal_surat;
             }
 
+            // Update status to "diperbaiki" if previous status was "ditolak"
+            if ($pengajuan->status === 'ditolak') {
+                $updateData['status'] = 'diperbaiki';
+            }
+
             if (!empty($updateData)) {
                 $this->repository->update($id, $updateData);
+                $pengajuan->refresh(); // Refresh untuk mendapatkan status terbaru
             }
 
             // Update atribut jika ada
