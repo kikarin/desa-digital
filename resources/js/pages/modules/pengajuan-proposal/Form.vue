@@ -47,6 +47,7 @@ const getInitialAnggaran = () => {
 const formData = ref({
     kategori_proposal_id: props.initialData?.kategori_proposal_id ? String(props.initialData.kategori_proposal_id) : '',
     resident_id: props.initialData?.resident_id ? String(props.initialData.resident_id) : '',
+    nomor_telepon_pengaju: props.initialData?.nomor_telepon_pengaju || '',
     nama_kegiatan: props.initialData?.nama_kegiatan || '',
     deskripsi_kegiatan: props.initialData?.deskripsi_kegiatan || '',
     usulan_anggaran: getInitialAnggaran(),
@@ -54,17 +55,12 @@ const formData = ref({
     existing_files: props.initialData?.file_pendukung || [],
     latitude: props.initialData?.latitude || '',
     longitude: props.initialData?.longitude || '',
-    kecamatan_id: props.initialData?.kecamatan_id ? String(props.initialData.kecamatan_id) : '',
-    desa_id: props.initialData?.desa_id ? String(props.initialData.desa_id) : '',
-    deskripsi_lokasi_tambahan: props.initialData?.deskripsi_lokasi_tambahan || '',
+    nama_lokasi: props.initialData?.nama_lokasi || '',
+    alamat: props.initialData?.alamat || '',
     thumbnail_foto_banner: null as File | null,
     existing_thumbnail: props.initialData?.thumbnail_foto_banner || null,
     tanda_tangan_digital: props.initialData?.tanda_tangan_digital || '',
 });
-
-// Dropdown options
-const kecamatanOptions = ref<Array<{ value: number; label: string }>>([]);
-const desaOptions = ref<Array<{ value: number; label: string }>>([]);
 
 // Map - menggunakan LocationMapPicker component
 const isLoading = ref(false);
@@ -82,34 +78,6 @@ const thumbnailInputRef = ref<HTMLInputElement | null>(null);
 const filePreviews = ref<string[]>([]);
 const thumbnailPreview = ref<string | null>(null);
 
-const loadKecamatan = async () => {
-    try {
-        const response = await axios.get('/api/kecamatan');
-        kecamatanOptions.value = response.data || [];
-    } catch (error) {
-        console.error('Gagal mengambil kecamatan:', error);
-    }
-};
-
-const loadDesa = async (kecamatanId: number) => {
-    try {
-        const response = await axios.get(`/api/desa/${kecamatanId}`);
-        desaOptions.value = response.data || [];
-    } catch (error) {
-        console.error('Gagal mengambil desa:', error);
-        desaOptions.value = [];
-    }
-};
-
-watch(() => formData.value.kecamatan_id, (newVal) => {
-    if (newVal) {
-        loadDesa(Number(newVal));
-        formData.value.desa_id = ''; // Reset desa saat kecamatan berubah
-    } else {
-        desaOptions.value = [];
-        formData.value.desa_id = '';
-    }
-});
 
 // Initialize Canvas
 const initCanvas = () => {
@@ -172,13 +140,7 @@ watch(() => canvasRef.value, () => {
 }, { immediate: true });
 
 onMounted(async () => {
-    // Load kecamatan
-    await loadKecamatan();
-    
-    // Load desa jika kecamatan sudah dipilih
-    if (formData.value.kecamatan_id) {
-        await loadDesa(Number(formData.value.kecamatan_id));
-    }
+    // Initialize component
 
     // Initialize canvas
     nextTick(() => {
@@ -221,7 +183,14 @@ onUnmounted(() => {
 
 // Handle location selected from LocationMapPicker
 const handleLocationSelected = (data: { lat: number; lng: number; address?: string }) => {
-    // Optional: bisa digunakan untuk update field lain jika diperlukan
+    if (data.address) {
+        formData.value.alamat = data.address;
+        // Extract road name for nama_lokasi
+        const addressParts = data.address.split(',');
+        formData.value.nama_lokasi = data.address;
+    } else {
+        formData.value.nama_lokasi = `Lokasi Kegiatan (${data.lat.toFixed(6)}, ${data.lng.toFixed(6)})`;
+    }
     toast({ title: 'Lokasi berhasil diambil', variant: 'success' });
 };
 
@@ -379,6 +348,7 @@ const handleSubmit = async () => {
         const submitData = new FormData();
         submitData.append('kategori_proposal_id', formData.value.kategori_proposal_id);
         submitData.append('resident_id', formData.value.resident_id);
+        submitData.append('nomor_telepon_pengaju', formData.value.nomor_telepon_pengaju);
         submitData.append('nama_kegiatan', formData.value.nama_kegiatan);
         submitData.append('deskripsi_kegiatan', formData.value.deskripsi_kegiatan);
         
@@ -533,6 +503,18 @@ const residentOptions = computed(() => {
                 </div>
 
                 <div>
+                    <Label for="nomor_telepon_pengaju">
+                        Nomor Telepon Pengaju
+                    </Label>
+                    <Input
+                        id="nomor_telepon_pengaju"
+                        v-model="formData.nomor_telepon_pengaju"
+                        type="text"
+                        placeholder="Masukkan nomor telepon pengaju"
+                    />
+                </div>
+
+                <div>
                     <Label for="nama_kegiatan">
                         Nama Kegiatan <span class="text-destructive">*</span>
                     </Label>
@@ -678,56 +660,25 @@ const residentOptions = computed(() => {
                 <CardTitle class="text-lg">Informasi Lokasi</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <Label for="kecamatan_id">Pilih Kecamatan</Label>
-                        <Select
-                            v-model="formData.kecamatan_id"
-                            :disabled="kecamatanOptions.length === 0"
-                        >
-                            <SelectTrigger id="kecamatan_id">
-                                <SelectValue placeholder="Pilih kecamatan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="option in kecamatanOptions"
-                                    :key="option.value"
-                                    :value="String(option.value)"
-                                >
-                                    {{ option.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div>
-                        <Label for="desa_id">Pilih Kelurahan/Desa</Label>
-                        <Select
-                            v-model="formData.desa_id"
-                            :disabled="!formData.kecamatan_id || desaOptions.length === 0"
-                        >
-                            <SelectTrigger id="desa_id">
-                                <SelectValue placeholder="Pilih kelurahan/desa" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="option in desaOptions"
-                                    :key="option.value"
-                                    :value="String(option.value)"
-                                >
-                                    {{ option.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                <div>
+                    <Label for="nama_lokasi">
+                        Nama Lokasi <span class="text-destructive">*</span>
+                    </Label>
+                    <Input
+                        id="nama_lokasi"
+                        v-model="formData.nama_lokasi"
+                        type="text"
+                        placeholder="Nama lokasi akan terisi otomatis"
+                        required
+                    />
                 </div>
 
                 <div>
-                    <Label for="deskripsi_lokasi_tambahan">Deskripsi Lokasi Tambahan</Label>
+                    <Label for="alamat">Alamat</Label>
                     <Textarea
-                        id="deskripsi_lokasi_tambahan"
-                        v-model="formData.deskripsi_lokasi_tambahan"
-                        placeholder="Masukkan deskripsi lokasi tambahan (opsional)"
+                        id="alamat"
+                        v-model="formData.alamat"
+                        placeholder="Alamat akan terisi otomatis"
                         rows="3"
                     />
                 </div>

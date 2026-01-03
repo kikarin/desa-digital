@@ -405,7 +405,7 @@ class PengajuanProposalController extends Controller implements HasMiddleware
         }
 
         // Load relationships
-        $pengajuan->load(['kategoriProposal', 'resident', 'adminVerifikasi', 'kecamatan', 'desa']);
+        $pengajuan->load(['kategoriProposal', 'resident', 'adminVerifikasi']);
 
         // Get data untuk PDF
         $data = $this->repository->customShow([], $pengajuan);
@@ -432,7 +432,7 @@ class PengajuanProposalController extends Controller implements HasMiddleware
         }
 
         // Load relationships
-        $pengajuan->load(['kategoriProposal', 'resident', 'adminVerifikasi', 'kecamatan', 'desa']);
+        $pengajuan->load(['kategoriProposal', 'resident', 'adminVerifikasi']);
 
         // Get data untuk PDF
         $data = $this->repository->customShow([], $pengajuan);

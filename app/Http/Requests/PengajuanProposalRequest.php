@@ -18,6 +18,7 @@ class PengajuanProposalRequest extends FormRequest
         $rules = [
             'kategori_proposal_id' => 'required|exists:mst_kategori_proposal,id',
             'resident_id' => 'required|exists:residents,id',
+            'nomor_telepon_pengaju' => 'nullable|string|max:20',
             'nama_kegiatan' => 'required|string|max:255',
             'deskripsi_kegiatan' => 'required|string',
             'usulan_anggaran' => 'required|numeric|min:0',
@@ -27,9 +28,8 @@ class PengajuanProposalRequest extends FormRequest
             'existing_files.*' => 'nullable|string',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'kecamatan_id' => 'nullable|exists:mst_kecamatan,id',
-            'desa_id' => 'nullable|exists:mst_desa,id',
-            'deskripsi_lokasi_tambahan' => 'nullable|string',
+            'nama_lokasi' => 'nullable|string|max:255',
+            'alamat' => 'nullable|string',
             'thumbnail_foto_banner' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
         ];
 

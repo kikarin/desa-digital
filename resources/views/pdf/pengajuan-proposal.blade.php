@@ -169,22 +169,15 @@
                     <td>Usulan Anggaran</td>
                     <td>: Rp {{ number_format($pengajuan->usulan_anggaran, 0, ',', '.') }}</td>
                 </tr>
-                @if($pengajuan->kecamatan_id || $pengajuan->desa_id || $pengajuan->kecamatan || $pengajuan->kelurahan_desa)
+                @if($pengajuan->nama_lokasi || $pengajuan->alamat)
                 <tr>
                     <td>Lokasi Kegiatan</td>
                     <td>: 
-                        @if($pengajuan->kecamatan_id && $pengajuan->kecamatan)
-                            Kecamatan {{ $pengajuan->kecamatan->nama }}
-                        @elseif($pengajuan->kecamatan)
-                            Kecamatan {{ $pengajuan->kecamatan }}
+                        @if($pengajuan->nama_lokasi)
+                            <strong>Nama Lokasi:</strong> {{ $pengajuan->nama_lokasi }}<br>
                         @endif
-                        @if($pengajuan->desa_id && $pengajuan->desa)
-                            , {{ $pengajuan->desa->nama }}
-                        @elseif($pengajuan->kelurahan_desa)
-                            , {{ $pengajuan->kelurahan_desa }}
-                        @endif
-                        @if($pengajuan->deskripsi_lokasi_tambahan)
-                            <br>{{ $pengajuan->deskripsi_lokasi_tambahan }}
+                        @if($pengajuan->alamat)
+                            <strong>Alamat:</strong> {{ $pengajuan->alamat }}
                         @endif
                     </td>
                 </tr>

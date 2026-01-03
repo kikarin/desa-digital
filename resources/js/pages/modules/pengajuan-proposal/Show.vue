@@ -18,6 +18,7 @@ const props = defineProps<{
         resident_id: number;
         resident_nama: string;
         resident_nik: string;
+        nomor_telepon_pengaju: string | null;
         nama_kegiatan: string;
         deskripsi_kegiatan: string;
         usulan_anggaran: number;
@@ -25,9 +26,8 @@ const props = defineProps<{
         file_pendukung: string[];
         latitude: string;
         longitude: string;
-        kecamatan: string;
-        kelurahan_desa: string;
-        deskripsi_lokasi_tambahan: string;
+        nama_lokasi: string | null;
+        alamat: string | null;
         thumbnail_foto_banner: string | null;
         tanda_tangan_digital: string | null;
         status: string;
@@ -62,6 +62,7 @@ const breadcrumbs = [
 const fields = [
     { label: 'Kategori Proposal', value: props.item.kategori_proposal_nama || '-' },
     { label: 'Pemohon', value: props.item.resident_nama && props.item.resident_nik ? `${props.item.resident_nama} (${props.item.resident_nik})` : '-' },
+    { label: 'Nomor Telepon Pengaju', value: props.item.nomor_telepon_pengaju || '-' },
     { label: 'Nama Kegiatan', value: props.item.nama_kegiatan || '-' },
     { label: 'Deskripsi Kegiatan', value: props.item.deskripsi_kegiatan || '-', className: 'sm:col-span-2' },
     { label: 'Usulan Anggaran', value: props.item.usulan_anggaran_formatted || '-' },
@@ -176,13 +177,10 @@ const isDisetujui = computed(() => {
                     :longitude="item.longitude"
                     :marker-popup-text="item.nama_kegiatan"
                 />
-                <div v-if="item.kecamatan || item.kelurahan_desa" class="mt-2 text-sm">
-                    <p v-if="item.kecamatan"><strong>Kecamatan:</strong> {{ item.kecamatan }}</p>
-                    <p v-if="item.kelurahan_desa"><strong>Kelurahan/Desa:</strong> {{ item.kelurahan_desa }}</p>
+                <div v-if="item.nama_lokasi || item.alamat" class="mt-2 text-sm space-y-1">
+                    <p v-if="item.nama_lokasi"><strong>Nama Lokasi:</strong> {{ item.nama_lokasi }}</p>
+                    <p v-if="item.alamat"><strong>Alamat:</strong> {{ item.alamat }}</p>
                 </div>
-                <p v-if="item.deskripsi_lokasi_tambahan" class="text-sm mt-2">
-                    <strong>Deskripsi Lokasi:</strong> {{ item.deskripsi_lokasi_tambahan }}
-                </p>
             </div>
 
             <!-- Tanda Tangan Digital -->

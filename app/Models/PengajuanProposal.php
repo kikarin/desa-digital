@@ -18,17 +18,15 @@ class PengajuanProposal extends Model
     protected $fillable = [
         'kategori_proposal_id',
         'resident_id',
+        'nomor_telepon_pengaju',
         'nama_kegiatan',
         'deskripsi_kegiatan',
         'usulan_anggaran',
         'file_pendukung',
         'latitude',
         'longitude',
-        'kecamatan_id',
-        'desa_id',
-        'kecamatan',
-        'kelurahan_desa',
-        'deskripsi_lokasi_tambahan',
+        'nama_lokasi',
+        'alamat',
         'thumbnail_foto_banner',
         'tanda_tangan_digital',
         'status',
@@ -76,16 +74,6 @@ class PengajuanProposal extends Model
     public function updated_by_user()
     {
         return $this->belongsTo(User::class, 'updated_by');
-    }
-
-    public function kecamatan()
-    {
-        return $this->belongsTo(Kecamatan::class, 'kecamatan_id');
-    }
-
-    public function desa()
-    {
-        return $this->belongsTo(Desa::class, 'desa_id');
     }
 
     public function getStatusLabelAttribute()
