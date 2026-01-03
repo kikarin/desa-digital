@@ -348,8 +348,6 @@ const getItemFields = (module: string, item: any) => {
             { label: 'Judul', value: item.judul || '-' },
             { label: 'Kategori Aduan', value: item.kategori_aduan_nama || '-' },
             { label: 'Nama Lokasi', value: item.nama_lokasi || '-' },
-            { label: 'Kecamatan', value: item.kecamatan_nama || '-' },
-            { label: 'Desa', value: item.desa_nama || '-' },
             { label: 'Deskripsi Lokasi', value: item.deskripsi_lokasi || '-' },
             { label: 'Jenis Aduan', value: item.jenis_aduan || '-' },
             { label: 'Status', value: item.status || '-' },
@@ -606,20 +604,32 @@ const loadAllMarkers = async () => {
         console.error('Error loading bank-sampah markers:', error);
     }
 
-    // Load Aduan Masyarakat
+    // Load Aduan Masyarakat - hanya yang jenis_aduan = 'publik'
     try {
         const aduanResponse = await axios.get('/api/aduan-masyarakat', {
             params: { per_page: -1 },
         });
-        if (aduanResponse.data?.data && Array.isArray(aduanResponse.data.data)) {
+        // Handle both possible response structures: data.data or data
+        const aduanData = aduanResponse.data?.data || aduanResponse.data || [];
+        if (Array.isArray(aduanData) && aduanData.length > 0) {
             const color = getMarkerColorByModule('aduan-masyarakat');
             const markerIcon = createColoredMarkerIcon(color);
-            aduanResponse.data.data
-                .filter((item: any) => item.latitude && item.longitude)
+            let markerCount = 0;
+            aduanData
+                .filter((item: any) => {
+                    // Hanya tampilkan aduan dengan jenis_aduan = 'publik'
+                    if (item.jenis_aduan !== 'publik') {
+                        return false;
+                    }
+                    // Check if latitude and longitude exist and are valid
+                    const lat = item.latitude;
+                    const lng = item.longitude;
+                    return lat != null && lng != null && lat !== '' && lng !== '';
+                })
                 .forEach((item: any) => {
                     const lat = parseFloat(item.latitude);
                     const lng = parseFloat(item.longitude);
-                    if (!isNaN(lat) && !isNaN(lng)) {
+                    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
                         const marker = L.marker([lat, lng], { icon: markerIcon });
                         marker.bindTooltip(`<b>Aduan Masyarakat</b><br/>${item.judul || '-'}`, {
                             permanent: false,
@@ -628,8 +638,14 @@ const loadAllMarkers = async () => {
                         });
                         marker.on('click', () => handleMarkerClick('aduan-masyarakat', item));
                         markersLayer!.addLayer(marker);
+                        markerCount++;
                     }
                 });
+            if (markerCount === 0) {
+                console.warn('Aduan Masyarakat: No valid markers found (check latitude/longitude data or jenis_aduan)');
+            }
+        } else {
+            console.warn('Aduan Masyarakat: No data received or invalid data structure');
         }
     } catch (error) {
         console.error('Error loading aduan-masyarakat markers:', error);
@@ -916,7 +932,12 @@ onUnmounted(() => {
 
     <!-- Modal Detail -->
     <Dialog v-model:open="isModalOpen">
-        <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto welcome-map-modal">
+        <DialogContent 
+            :class="[
+                'max-h-[90vh] overflow-y-auto welcome-map-modal',
+                selectedModule === 'houses' ? 'max-w-[95vw] sm:max-w-7xl' : 'max-w-4xl'
+            ]"
+        >
             <DialogHeader>
                 <DialogTitle>{{ getModalTitle(selectedModule) }}</DialogTitle>
             </DialogHeader>
@@ -929,14 +950,19 @@ onUnmounted(() => {
                 <!-- Fields Information -->
                 <Card>
                     <CardContent class="pt-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div 
+                            :class="[
+                                'grid gap-4',
+                                selectedModule === 'houses' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
+                            ]"
+                        >
                             <div
                                 v-for="field in getItemFields(selectedModule, selectedItem)"
                                 :key="field.label"
                                 class="space-y-1"
                             >
                                 <p class="text-sm font-medium text-muted-foreground">{{ field.label }}</p>
-                                <p class="text-sm">{{ field.value }}</p>
+                                <p class="text-sm break-words">{{ field.value }}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -1038,48 +1064,50 @@ onUnmounted(() => {
                 <div v-if="selectedModule === 'houses' && houseResidents && houseResidents.length > 0">
                     <h3 class="text-lg font-semibold mb-4">Daftar Warga</h3>
                     <div class="border rounded-lg overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>NIK</TableHead>
-                                    <TableHead>Nama</TableHead>
-                                    <TableHead>Jenis Kelamin</TableHead>
-                                    <TableHead>Usia</TableHead>
-                                    <TableHead>No. KK</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Keterangan</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                <TableRow v-for="resident in houseResidents" :key="resident.id">
-                                    <TableCell>{{ resident.nik }}</TableCell>
-                                    <TableCell>
-                                        <div class="flex items-center gap-2">
-                                            <span>{{ resident.nama }}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{{ getJenisKelaminLabel(resident.jenis_kelamin) }}</TableCell>
-                                    <TableCell>{{ calculateAge(resident.tanggal_lahir) }} tahun</TableCell>
-                                    <TableCell>{{ resident.no_kk }}</TableCell>
-                                    <TableCell>
-                                        <span
-                                            class="px-2 py-1 text-xs font-semibold rounded-full"
-                                            :class="{
-                                                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': resident.status === 'Aktif',
-                                                'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': resident.status === 'Pindah',
-                                                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': resident.status === 'Meninggal',
-                                            }"
-                                        >
-                                            {{ resident.status }}
-                                        </span>
-                                    </TableCell>
-                                    <TableCell>
-                                        <span v-if="resident.is_kepala_keluarga" class="text-sm text-muted-foreground">Kepala Keluarga</span>
-                                        <span v-else class="text-sm text-muted-foreground">-</span>
-                                    </TableCell>
-                                </TableRow>
-                            </TableBody>
-                        </Table>
+                        <div class="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead class="whitespace-nowrap">NIK</TableHead>
+                                        <TableHead class="whitespace-nowrap">Nama</TableHead>
+                                        <TableHead class="whitespace-nowrap">Jenis Kelamin</TableHead>
+                                        <TableHead class="whitespace-nowrap">Usia</TableHead>
+                                        <TableHead class="whitespace-nowrap">No. KK</TableHead>
+                                        <TableHead class="whitespace-nowrap">Status</TableHead>
+                                        <TableHead class="whitespace-nowrap">Keterangan</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="resident in houseResidents" :key="resident.id">
+                                        <TableCell class="whitespace-nowrap">{{ resident.nik }}</TableCell>
+                                        <TableCell>
+                                            <div class="flex items-center gap-2 min-w-[120px]">
+                                                <span class="truncate">{{ resident.nama }}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell class="whitespace-nowrap">{{ getJenisKelaminLabel(resident.jenis_kelamin) }}</TableCell>
+                                        <TableCell class="whitespace-nowrap">{{ calculateAge(resident.tanggal_lahir) }} tahun</TableCell>
+                                        <TableCell class="whitespace-nowrap">{{ resident.no_kk }}</TableCell>
+                                        <TableCell class="whitespace-nowrap">
+                                            <span
+                                                class="px-2 py-1 text-xs font-semibold rounded-full"
+                                                :class="{
+                                                    'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200': resident.status === 'Aktif',
+                                                    'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200': resident.status === 'Pindah',
+                                                    'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200': resident.status === 'Meninggal',
+                                                }"
+                                            >
+                                                {{ resident.status }}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell class="whitespace-nowrap">
+                                            <span v-if="resident.is_kepala_keluarga" class="text-sm text-muted-foreground">Kepala Keluarga</span>
+                                            <span v-else class="text-sm text-muted-foreground">-</span>
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
                     </div>
                 </div>
 

@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
         $this->call(FamiliesSeeder::class);
         $this->call(ResidentsSeeder::class);
         $this->call(ImportSqlSeeder::class);
+        $this->call(JenisSuratSeeder::class);
         // try {
         //     DB::beginTransaction();
         //         $this->call([
@@ -53,6 +54,7 @@ class DatabaseSeeder extends Seeder
         //             FamiliesSeeder::class,
         //             ResidentsSeeder::class,
         //             ImportSqlSeeder::class,
+        //             JenisSuratSeeder::class,
         //         ]);
         //         DB::commit();
         //     } catch (Exception $e) {

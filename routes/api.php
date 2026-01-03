@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AduanMasyarakatController;
+use App\Http\Controllers\Api\LayananDaruratController;
+use App\Http\Controllers\Api\PengajuanSuratController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -23,6 +25,10 @@ Route::prefix('pwa')->group(function () {
     // Auth routes untuk PWA
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
+    
+    // Layanan Darurat (public, tidak perlu auth)
+    Route::get('/layanan-darurat/kategori', [LayananDaruratController::class, 'getKategori']);
+    Route::get('/layanan-darurat', [LayananDaruratController::class, 'index']);
 });
 
 // Protected routes untuk PWA (perlu auth)
@@ -33,14 +39,19 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     
     // Dropdown options untuk form aduan (harus SEBELUM apiResource)
     Route::get('/aduan-masyarakat/kategori', [AduanMasyarakatController::class, 'getKategoriAduan']);
-    Route::get('/aduan-masyarakat/kecamatan', [AduanMasyarakatController::class, 'getKecamatan']);
-    Route::get('/aduan-masyarakat/desa/{kecamatanId}', [AduanMasyarakatController::class, 'getDesa']);
     
     // Route khusus untuk update dengan file (POST karena PUT tidak support multipart/form-data dengan baik)
     Route::post('/aduan-masyarakat/{id}/update', [AduanMasyarakatController::class, 'updateWithFiles']);
     
     // Aduan Masyarakat (Aduan Saya) - harus SETELAH route spesifik
     Route::apiResource('aduan-masyarakat', AduanMasyarakatController::class);
+    
+    // Layanan Surat - Pengajuan Saya
+    Route::get('/pengajuan-surat/jenis-surat', [PengajuanSuratController::class, 'getJenisSurat']);
+    Route::get('/pengajuan-surat/jenis-surat/{id}', [PengajuanSuratController::class, 'getJenisSuratDetail']);
+    Route::get('/pengajuan-surat/{id}/export-pdf', [PengajuanSuratController::class, 'exportPdf']);
+    Route::post('/pengajuan-surat/{id}/update', [PengajuanSuratController::class, 'update']); // POST untuk update dengan file
+    Route::apiResource('pengajuan-surat', PengajuanSuratController::class);
 });
 
 // Existing routes

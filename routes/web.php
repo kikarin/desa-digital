@@ -258,8 +258,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'verifikasi'])->name('aduan-masyarakat.verifikasi');
     Route::post('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'storeVerifikasi'])->name('aduan-masyarakat.store-verifikasi');
     Route::post('/aduan-masyarakat/destroy-selected', [AduanMasyarakatController::class, 'destroy_selected'])->name('aduan-masyarakat.destroy-selected');
-    Route::get('/api/kecamatan', [AduanMasyarakatController::class, 'getKecamatan']);
-    Route::get('/api/desa/{kecamatanId}', [AduanMasyarakatController::class, 'getDesa']);
     Route::get('/api/aduan/kategori-aduan', [AduanMasyarakatController::class, 'getKategoriAduan']);
 });
 

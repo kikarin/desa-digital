@@ -134,6 +134,17 @@ class AduanMasyarakatRepository
             'tanggal'           => $item->created_at ? Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : '-',
             'foto'              => $foto,
             'kategori_aduan_nama' => $item->kategori_aduan?->nama ?? '-',
+            // Tambahkan field yang diperlukan untuk map
+            'latitude'          => $item->latitude,
+            'longitude'         => $item->longitude,
+            'status'            => $item->status,
+            'jenis_aduan'       => $item->jenis_aduan,
+            'nama_lokasi'       => $item->nama_lokasi,
+            'kecamatan_nama'    => $item->kecamatan?->nama ?? '-',
+            'desa_nama'         => $item->desa?->nama ?? '-',
+            'deskripsi_lokasi'  => $item->deskripsi_lokasi,
+            'detail_aduan'      => $item->detail_aduan,
+            'alasan_melaporkan' => $item->alasan_melaporkan,
         ];
     }
 

@@ -26,8 +26,6 @@ const formData = ref({
     latitude: props.initialData?.latitude || '',
     longitude: props.initialData?.longitude || '',
     nama_lokasi: props.initialData?.nama_lokasi || '',
-    kecamatan_id: props.initialData?.kecamatan_id || '',
-    desa_id: props.initialData?.desa_id || '',
     deskripsi_lokasi: props.initialData?.deskripsi_lokasi || '',
     jenis_aduan: props.initialData?.jenis_aduan || 'publik',
     alasan_melaporkan: props.initialData?.alasan_melaporkan || '',
@@ -37,8 +35,6 @@ const isLoading = ref(false);
 
 // Dropdown options
 const kategoriOptions = ref<Array<{ value: number; label: string }>>([]);
-const kecamatanOptions = ref<Array<{ value: number; label: string }>>([]);
-const desaOptions = ref<Array<{ value: number; label: string }>>([]);
 
 // Files
 const files = ref<File[]>([]);
@@ -68,19 +64,6 @@ onMounted(async () => {
         });
     }
 
-    // Load kecamatan
-    try {
-        const response = await axios.get('/api/kecamatan');
-        kecamatanOptions.value = response.data || [];
-    } catch (error) {
-        console.error('Gagal mengambil kecamatan:', error);
-    }
-
-    // Load desa jika kecamatan sudah dipilih
-    if (formData.value.kecamatan_id) {
-        loadDesa(formData.value.kecamatan_id);
-    }
-
     // Load existing files preview
     if (existingFiles.value.length > 0) {
         filePreviews.value = existingFiles.value.map((file) => ({
@@ -91,26 +74,6 @@ onMounted(async () => {
     }
 });
 
-
-const loadDesa = async (kecamatanId: number) => {
-    try {
-        const response = await axios.get(`/api/desa/${kecamatanId}`);
-        desaOptions.value = response.data || [];
-    } catch (error) {
-        console.error('Gagal mengambil desa:', error);
-        desaOptions.value = [];
-    }
-};
-
-watch(() => formData.value.kecamatan_id, (newVal) => {
-    if (newVal) {
-        loadDesa(newVal);
-        formData.value.desa_id = ''; // Reset desa saat kecamatan berubah
-    } else {
-        desaOptions.value = [];
-        formData.value.desa_id = '';
-    }
-});
 
 // Handle location selected from LocationMapPicker
 const handleLocationSelected = (data: { lat: number; lng: number; address?: string }) => {
@@ -196,8 +159,6 @@ const handleSave = () => {
     submitFormData.append('latitude', formData.value.latitude || '');
     submitFormData.append('longitude', formData.value.longitude || '');
     submitFormData.append('nama_lokasi', formData.value.nama_lokasi || '');
-    submitFormData.append('kecamatan_id', formData.value.kecamatan_id || '');
-    submitFormData.append('desa_id', formData.value.desa_id || '');
     submitFormData.append('deskripsi_lokasi', formData.value.deskripsi_lokasi || '');
     submitFormData.append('jenis_aduan', formData.value.jenis_aduan);
     submitFormData.append('alasan_melaporkan', formData.value.alasan_melaporkan || '');
@@ -327,51 +288,6 @@ const handleSave = () => {
                 <CardTitle class="text-lg">Informasi Lokasi</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
-                <!-- Kecamatan & Desa -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <Label for="kecamatan_id">Kecamatan</Label>
-                        <Select
-                            v-model="formData.kecamatan_id"
-                            :disabled="kecamatanOptions.length === 0"
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih kecamatan" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="option in kecamatanOptions"
-                                    :key="option.value"
-                                    :value="String(option.value)"
-                                >
-                                    {{ option.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <div>
-                        <Label for="desa_id">Kelurahan/Desa</Label>
-                        <Select
-                            v-model="formData.desa_id"
-                            :disabled="!formData.kecamatan_id || desaOptions.length === 0"
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Pilih kelurahan/desa" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="option in desaOptions"
-                                    :key="option.value"
-                                    :value="String(option.value)"
-                                >
-                                    {{ option.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
                 <div>
                     <Label for="nama_lokasi">Nama Lokasi</Label>
                     <Input

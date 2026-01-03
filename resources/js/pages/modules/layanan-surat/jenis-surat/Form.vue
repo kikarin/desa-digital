@@ -213,10 +213,10 @@ const handleSubmit = () => {
                 <div
                     v-for="(atribut, index) in formData.atribut"
                     :key="index"
-                    class="p-4 border rounded-lg space-y-4 bg-white"
+                    class="p-4 border border-border rounded-lg space-y-4 bg-card"
                 >
                     <div class="flex items-center justify-between mb-2">
-                        <h4 class="font-medium">Atribut {{ index + 1 }}</h4>
+                        <h4 class="font-medium text-foreground">Atribut {{ index + 1 }}</h4>
                         <Button
                             type="button"
                             @click="removeAtribut(index)"
@@ -279,8 +279,8 @@ const handleSubmit = () => {
                     </div>
 
                     <!-- Lampiran Section for this atribut -->
-                    <div class="mt-4 pt-4 border-t">
-                        <h5 class="font-medium mb-3">Lampiran (Opsional)</h5>
+                    <div class="mt-4 pt-4 border-t border-border">
+                        <h5 class="font-medium mb-3 text-foreground">Lampiran (Opsional)</h5>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <Label>Nama Lampiran</Label>

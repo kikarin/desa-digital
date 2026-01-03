@@ -185,43 +185,6 @@ class AduanMasyarakatController extends Controller implements HasMiddleware
     }
 
     /**
-     * Get list kecamatan
-     */
-    public function getKecamatan()
-    {
-        $kecamatans = \App\Models\Kecamatan::select('id', 'nama')
-            ->orderBy('nama', 'asc')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->nama,
-                ];
-            });
-
-        return response()->json($kecamatans);
-    }
-
-    /**
-     * Get list desa by kecamatan_id
-     */
-    public function getDesa($kecamatanId)
-    {
-        $desas = \App\Models\Desa::where('id_kecamatan', $kecamatanId)
-            ->select('id', 'nama')
-            ->orderBy('nama', 'asc')
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'value' => $item->id,
-                    'label' => $item->nama,
-                ];
-            });
-
-        return response()->json($desas);
-    }
-
-    /**
      * Get list kategori aduan
      */
     public function getKategoriAduan()
@@ -249,6 +212,11 @@ class AduanMasyarakatController extends Controller implements HasMiddleware
         $data = $this->request->validate($this->getValidationRules());
         $data = $this->request->all();
         
+        // Pastikan jenis_aduan selalu ada dan valid
+        if (!isset($data['jenis_aduan']) || !in_array($data['jenis_aduan'], ['publik', 'private'])) {
+            $data['jenis_aduan'] = $request->input('jenis_aduan', 'publik');
+        }
+        
         // Extract files
         $files = [];
         if ($request->hasFile('files')) {
@@ -266,7 +234,18 @@ class AduanMasyarakatController extends Controller implements HasMiddleware
             $data = $before['data'];
         }
         
+        // Pastikan jenis_aduan masih ada setelah callback
+        if (!isset($data['jenis_aduan']) || !in_array($data['jenis_aduan'], ['publik', 'private'])) {
+            $data['jenis_aduan'] = $request->input('jenis_aduan', 'publik');
+        }
+        
         $data = $this->repository->customDataCreateUpdate($data);
+        
+        // Pastikan jenis_aduan masih ada setelah customDataCreateUpdate
+        if (!isset($data['jenis_aduan']) || !in_array($data['jenis_aduan'], ['publik', 'private'])) {
+            $data['jenis_aduan'] = $request->input('jenis_aduan', 'publik');
+        }
+        
         $model = $this->repository->create($data);
         
         if (!($model instanceof \Illuminate\Database\Eloquent\Model)) {
@@ -291,6 +270,11 @@ class AduanMasyarakatController extends Controller implements HasMiddleware
         $data = $this->request->validate($this->getValidationRules());
         $data = $this->request->all();
         
+        // Pastikan jenis_aduan selalu ada dan valid
+        if (!isset($data['jenis_aduan']) || !in_array($data['jenis_aduan'], ['publik', 'private'])) {
+            $data['jenis_aduan'] = $request->input('jenis_aduan', 'publik');
+        }
+        
         // Extract files
         $files = [];
         if ($request->hasFile('files')) {
@@ -301,6 +285,11 @@ class AduanMasyarakatController extends Controller implements HasMiddleware
         }
         unset($data['files']);
         
+        // Handle deleted files
+        if ($request->has('deleted_files')) {
+            $data['deleted_files'] = $request->input('deleted_files', []);
+        }
+        
         $before = $this->repository->callbackBeforeStoreOrUpdate($data, 'update');
         if ($before['error'] != 0) {
             return redirect()->back()->with('error', $before['message'])->withInput();
@@ -308,8 +297,19 @@ class AduanMasyarakatController extends Controller implements HasMiddleware
             $data = $before['data'];
         }
         
+        // Pastikan jenis_aduan masih ada setelah callback
+        if (!isset($data['jenis_aduan']) || !in_array($data['jenis_aduan'], ['publik', 'private'])) {
+            $data['jenis_aduan'] = $request->input('jenis_aduan', 'publik');
+        }
+        
         $record = $this->repository->getById($id);
         $data = $this->repository->customDataCreateUpdate($data, $record);
+        
+        // Pastikan jenis_aduan masih ada setelah customDataCreateUpdate
+        if (!isset($data['jenis_aduan']) || !in_array($data['jenis_aduan'], ['publik', 'private'])) {
+            $data['jenis_aduan'] = $request->input('jenis_aduan', 'publik');
+        }
+        
         $model = $this->repository->update($id, $data);
         
         if (!($model instanceof \Illuminate\Database\Eloquent\Model)) {

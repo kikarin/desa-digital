@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\PengajuanSurat;
 use App\Traits\RepositoryTrait;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PengajuanSuratRepository
 {
@@ -128,18 +129,18 @@ class PengajuanSuratRepository
             'resident_id' => $item->resident_id,
             'resident_nama' => $item->resident->nama ?? '-',
             'resident_nik' => $item->resident->nik ?? '-',
-            'tanggal_surat' => $item->tanggal_surat?->format('Y-m-d'),
+            'tanggal_surat' => $item->tanggal_surat ? Carbon::parse($item->tanggal_surat)->timezone('Asia/Jakarta')->format('Y-m-d') : null,
             'status' => $item->status,
             'nomor_surat' => $item->nomor_surat,
-            'tanggal_disetujui' => $item->tanggal_disetujui?->format('Y-m-d'),
+            'tanggal_disetujui' => $item->tanggal_disetujui ? Carbon::parse($item->tanggal_disetujui)->timezone('Asia/Jakarta')->format('Y-m-d') : null,
             'alasan_penolakan' => $item->alasan_penolakan,
             'admin_verifikasi_id' => $item->admin_verifikasi_id,
             'tanda_tangan_digital' => $item->tanda_tangan_digital,
             'foto_tanda_tangan' => $item->foto_tanda_tangan,
             'tanda_tangan_type' => $item->tanda_tangan_type,
             'can_be_edited' => $item->canBeEdited(),
-            'created_at' => $item->created_at?->format('Y-m-d H:i:s'),
-            'updated_at' => $item->updated_at?->format('Y-m-d H:i:s'),
+            'created_at' => $item->created_at ? Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+            'updated_at' => $item->updated_at ? Carbon::parse($item->updated_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
             'created_by_user' => $item->created_by_user ? [
                 'id' => $item->created_by_user->id,
                 'name' => $item->created_by_user->name,

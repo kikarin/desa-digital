@@ -16,8 +16,6 @@ const props = defineProps<{
         latitude: string | null;
         longitude: string | null;
         nama_lokasi: string | null;
-        kecamatan_nama: string;
-        desa_nama: string;
         deskripsi_lokasi: string | null;
         jenis_aduan: string;
         alasan_melaporkan: string | null;
@@ -57,8 +55,6 @@ const fields = [
     { label: 'Detail Aduan', value: props.item.detail_aduan, className: 'sm:col-span-2' },
     { label: 'Jenis Aduan', value: props.item.jenis_aduan === 'publik' ? 'Publik' : 'Private' },
     { label: 'Status', value: props.item.status === 'selesai' ? 'Selesai' : props.item.status === 'dibatalkan' ? 'Dibatalkan' : 'Menunggu Verifikasi' },
-    { label: 'Kecamatan', value: props.item.kecamatan_nama || '-' },
-    { label: 'Kelurahan/Desa', value: props.item.desa_nama || '-' },
     { label: 'Nama Lokasi', value: props.item.nama_lokasi || '-', className: 'sm:col-span-2' },
     { label: 'Deskripsi Lokasi', value: props.item.deskripsi_lokasi || '-', className: 'sm:col-span-2' },
     { label: 'Alasan Melaporkan', value: props.item.alasan_melaporkan || '-', className: 'sm:col-span-2' },
