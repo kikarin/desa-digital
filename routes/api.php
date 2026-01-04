@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AduanMasyarakatController;
 use App\Http\Controllers\Api\LayananDaruratController;
 use App\Http\Controllers\Api\PengajuanSuratController;
 use App\Http\Controllers\Api\PengajuanProposalController;
+use App\Http\Controllers\Api\ProgramBantuanController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -61,6 +62,10 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     Route::get('/pengajuan-proposal', [PengajuanProposalController::class, 'index']);
     Route::get('/pengajuan-proposal/{id}', [PengajuanProposalController::class, 'show']);
     Route::post('/pengajuan-proposal', [PengajuanProposalController::class, 'store']);
+    
+    // Program Bantuan - Riwayat Saya
+    Route::get('/program-bantuan/riwayat-saya', [ProgramBantuanController::class, 'index']);
+    Route::get('/program-bantuan/riwayat-saya/{id}', [ProgramBantuanController::class, 'show']);
 });
 
 // Existing routes
