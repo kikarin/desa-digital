@@ -19,7 +19,7 @@ const formInputs = [
         required: true,
         options: [
             { value: 'berita', label: 'Berita' },
-            { value: 'event', label: 'Event' },
+            { value: 'event', label: 'Pengumuman' },
         ],
     },
     {

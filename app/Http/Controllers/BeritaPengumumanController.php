@@ -56,7 +56,7 @@ class BeritaPengumumanController extends Controller implements HasMiddleware
             'filterOptions' => [
                 'tipe' => [
                     ['value' => 'berita', 'label' => 'Berita'],
-                    ['value' => 'event', 'label' => 'Event'],
+                    ['value' => 'event', 'label' => 'Pengumuman'],
                 ],
             ],
         ]);

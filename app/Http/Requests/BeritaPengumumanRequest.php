@@ -35,7 +35,7 @@ class BeritaPengumumanRequest extends FormRequest
     {
         return [
             'tipe.required' => 'Tipe harus dipilih.',
-            'tipe.in' => 'Tipe harus berita atau event.',
+            'tipe.in' => 'Tipe harus berita atau pengumuman.',
             'title.required' => 'Title wajib diisi.',
             'title.max' => 'Title maksimal 255 karakter.',
             'tanggal.required' => 'Tanggal wajib diisi.',

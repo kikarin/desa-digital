@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LayananDaruratController;
 use App\Http\Controllers\Api\PengajuanSuratController;
 use App\Http\Controllers\Api\PengajuanProposalController;
 use App\Http\Controllers\Api\ProgramBantuanController;
+use App\Http\Controllers\Api\BeritaPengumumanController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -31,6 +32,12 @@ Route::prefix('pwa')->group(function () {
     // Layanan Darurat (public, tidak perlu auth)
     Route::get('/layanan-darurat/kategori', [LayananDaruratController::class, 'getKategori']);
     Route::get('/layanan-darurat', [LayananDaruratController::class, 'index']);
+    
+    // Berita Pengumuman (public, tidak perlu auth)
+    Route::get('/berita-pengumuman/navbar', [BeritaPengumumanController::class, 'getNavbar']);
+    Route::get('/berita-pengumuman/tipe', [BeritaPengumumanController::class, 'getTipe']);
+    Route::get('/berita-pengumuman', [BeritaPengumumanController::class, 'index']);
+    Route::get('/berita-pengumuman/{id}', [BeritaPengumumanController::class, 'show']);
 });
 
 // Protected routes untuk PWA (perlu auth)

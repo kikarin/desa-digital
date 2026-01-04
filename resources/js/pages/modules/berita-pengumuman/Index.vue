@@ -28,7 +28,7 @@ const columns = [
         format: (row: any) => {
             return row.tipe === 'berita'
                 ? '<span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">Berita</span>'
-                : '<span class="px-2 py-1 text-xs font-semibold text-purple-800 bg-purple-100 rounded-full">Event</span>';
+                : '<span class="px-2 py-1 text-xs font-semibold text-purple-800 bg-purple-100 rounded-full">Pengumuman</span>';
         },
     },
     { key: 'title', label: 'Title', searchable: true, orderable: true, visible: true },
@@ -68,7 +68,7 @@ const { toast } = useToast();
 const filterOptions = ref<{ tipe?: Array<{ value: string; label: string }> }>({
     tipe: [
         { value: 'berita', label: 'Berita' },
-        { value: 'event', label: 'Event' },
+        { value: 'event', label: 'Pengumuman' },
     ],
 });
 

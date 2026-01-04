@@ -35,7 +35,7 @@ const breadcrumbs = [
 const fields = [
     {
         label: 'Tipe',
-        value: props.item.tipe === 'berita' ? 'Berita' : 'Event',
+        value: props.item.tipe === 'berita' ? 'Berita' : 'Pengumuman',
     },
     { label: 'Title', value: props.item.title },
     {
