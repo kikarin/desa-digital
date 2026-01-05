@@ -4,6 +4,10 @@ import PageIndex from '@/pages/modules/base-page/PageIndex.vue';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref, onMounted } from 'vue';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const props = defineProps<{
     can?: {
@@ -126,6 +130,64 @@ const deleteResidents = async (row: any) => {
         },
     });
 };
+
+const showImportDialog = ref(false);
+const importFile = ref<File | null>(null);
+const isImporting = ref(false);
+
+const handleImportClick = () => {
+    showImportDialog.value = true;
+};
+
+const handleFileChange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (target.files && target.files.length > 0) {
+        importFile.value = target.files[0];
+    }
+};
+
+const handleImport = async () => {
+    if (!importFile.value) {
+        return toast({ title: 'Pilih file Excel terlebih dahulu', variant: 'destructive' });
+    }
+
+    const formData = new FormData();
+    formData.append('file', importFile.value);
+
+    isImporting.value = true;
+    try {
+        const response = await axios.post('/data-warga/residents/import-excel', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        toast({
+            title: response.data?.message || 'Import berhasil',
+            variant: 'success',
+        });
+
+        showImportDialog.value = false;
+        importFile.value = null;
+        
+        // Reset file input
+        const fileInput = document.getElementById('import-file') as HTMLInputElement;
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        
+        pageIndex.value?.fetchData();
+    } catch (error: any) {
+        console.error('Gagal import Excel:', error);
+        const message = error.response?.data?.message || error.response?.data?.errors?.file?.[0] || 'Gagal import Excel';
+        toast({
+            title: message,
+            variant: 'destructive',
+        });
+    } finally {
+        isImporting.value = false;
+    }
+};
 </script>
 
 <template>
@@ -144,6 +206,49 @@ const deleteResidents = async (row: any) => {
         :can="props.can"
         :show-filter="true"
         :filter-options="filterOptions"
+        import-url="/data-warga/residents/import-excel"
+        :on-import-click="handleImportClick"
+        :can-import="true"
     />
+
+    <Dialog v-model:open="showImportDialog">
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Import Excel Warga</DialogTitle>
+                <DialogDescription>
+                    Upload file Excel dengan format: NO RW, NO RT, NO RUMAH, JENIS RUMAH, NAMA KELUARGA, NO KK, NO.NIK, TEMPAT /TGL/LAHIR, JUMLAH ORANG, JENIS KELAMIN, STATUS
+                </DialogDescription>
+            </DialogHeader>
+            <div class="space-y-4 py-4">
+                <div class="space-y-2">
+                    <Label for="import-file">Pilih File Excel</Label>
+                    <Input
+                        id="import-file"
+                        type="file"
+                        accept=".xlsx,.xls"
+                        @change="handleFileChange"
+                    />
+                    <p class="text-sm text-muted-foreground">
+                        Format: Excel (.xlsx, .xls) - Maksimal 10MB
+                    </p>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button
+                    variant="outline"
+                    @click="showImportDialog = false"
+                    :disabled="isImporting"
+                >
+                    Batal
+                </Button>
+                <Button
+                    @click="handleImport"
+                    :disabled="!importFile || isImporting"
+                >
+                    {{ isImporting ? 'Mengimport...' : 'Import' }}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
 </template>
 

@@ -11,6 +11,8 @@ use Illuminate\Routing\Controllers\Middleware;
 use App\Repositories\RwsRepository;
 use App\Repositories\RtsRepository;
 use App\Repositories\ResidentStatusRepository;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ResidentsImport;
 
 class ResidentsController extends Controller implements HasMiddleware
 {
@@ -94,6 +96,46 @@ class ResidentsController extends Controller implements HasMiddleware
                 })->toArray(),
             ],
         ]);
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls|max:10240', // Max 10MB
+        ]);
+
+        try {
+            $import = new ResidentsImport();
+            Excel::import($import, $request->file('file'));
+
+            $successCount = $import->getSuccessCount();
+            $failCount = $import->getFailCount();
+            $houseCount = $import->getHouseCount();
+            $errors = $import->getErrors();
+
+            $message = "Import selesai. Berhasil: {$successCount} resident, {$houseCount} house/fasilitas. Gagal: {$failCount}";
+            
+            if ($failCount > 0 && count($errors) > 0) {
+                $message .= "\n\nError:\n" . implode("\n", array_slice($errors, 0, 10));
+                if (count($errors) > 10) {
+                    $message .= "\n... dan " . (count($errors) - 10) . " error lainnya.";
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'success_count' => $successCount,
+                'house_count' => $houseCount,
+                'fail_count' => $failCount,
+                'errors' => $errors,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal import Excel: ' . $e->getMessage(),
+            ], 422);
+        }
     }
 }
 

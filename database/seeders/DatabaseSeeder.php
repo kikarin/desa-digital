@@ -29,11 +29,11 @@ class DatabaseSeeder extends Seeder
         $this->call(AssistanceItemSeeder::class);
         $this->call(KategoriAduanSeeder::class);
         $this->call(KategoriProposalSeeder::class);
-        $this->call(RwsSeeder::class);
-        $this->call(RtsSeeder::class);
-        $this->call(HousesSeeder::class);
-        $this->call(FamiliesSeeder::class);
-        $this->call(ResidentsSeeder::class);
+        // $this->call(RwsSeeder::class);
+        // $this->call(RtsSeeder::class);
+        // $this->call(HousesSeeder::class);
+        // $this->call(FamiliesSeeder::class);
+        // $this->call(ResidentsSeeder::class);
         $this->call(ImportSqlSeeder::class);
         $this->call(JenisSuratSeeder::class);
         // try {

@@ -119,6 +119,9 @@ const props = withDefaults(defineProps<{
     };
     hideCreateButton?: boolean;
     createMultipleUrl?: string;
+    importUrl?: string;
+    onImportClick?: () => void;
+    canImport?: boolean;
 }>(), {
     apiEndpoint: '',
 });
@@ -319,6 +322,9 @@ defineExpose({ fetchData });
                 v-bind="createUrl && !props.hideCreateButton ? { createUrl } : {}"
                 :create-multiple-url="props.createMultipleUrl"
                 :can-delete-selected="props.canDeleteSelected"
+                :import-url="props.importUrl"
+                :on-import-click="props.onImportClick"
+                :can-import="props.canImport !== false"
             />
             <DataTable
                 :columns="columns"

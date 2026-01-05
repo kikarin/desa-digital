@@ -1,21 +1,34 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import { Link } from '@inertiajs/vue3';
-import { Filter } from 'lucide-vue-next';
+import { Filter, Upload } from 'lucide-vue-next';
 
 const props = defineProps<{
     title: string;
     createUrl?: string;
     createMultipleUrl?: string;
+    importUrl?: string;
+    onImportClick?: () => void;
     selected: number[];
     onDeleteSelected: () => void;
     canCreate?: boolean;
     canCreateMultiple?: boolean;
     canDelete?: boolean;
+    canImport?: boolean;
     showFilter?: boolean;
     onFilterClick?: () => void;
     canDeleteSelected?: boolean;
 }>();
+
+const emit = defineEmits(['import']);
+
+const handleImportClick = () => {
+    if (props.onImportClick) {
+        props.onImportClick();
+    } else {
+        emit('import');
+    }
+};
 </script>
 
 <template>
@@ -33,6 +46,16 @@ const props = defineProps<{
             >
                 <Filter class="h-4 w-4 mr-2" />
                 Filter
+            </Button>
+
+            <Button 
+                v-if="props.importUrl && props.canImport !== false"
+                variant="outline" 
+                size="sm"
+                @click="handleImportClick"
+            >
+                <Upload class="h-4 w-4 mr-2" />
+                Import Excel
             </Button>
 
             <Link v-if="props.createUrl && props.canCreate !== false" :href="props.createUrl">

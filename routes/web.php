@@ -156,6 +156,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/data-warga/residents', ResidentsController::class)->names('residents');
     Route::get('/api/residents', [ResidentsController::class, 'apiIndex']);
     Route::post('/data-warga/residents/destroy-selected', [ResidentsController::class, 'destroy_selected'])->name('residents.destroy_selected');
+    Route::post('/data-warga/residents/import-excel', [ResidentsController::class, 'importExcel'])->name('residents.import_excel');
 });
 
 // Assistance Programs Routes
