@@ -14,7 +14,7 @@ defineProps<Props>();
 
 <template>
     <img
-        src="/storage/Lambang_Kabupaten_Bogor.png"
+        src="/public/Lambang_Kabupaten_Bogor.png"
         alt="Logo Kabupaten Bogor"
         class="h-16 w-auto object-contain"
     />
