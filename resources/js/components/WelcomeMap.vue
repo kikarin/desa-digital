@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import axios from 'axios';
 import { router } from '@inertiajs/vue3';
-import { getMarkerColorByJenisRumah, getMarkerColorByModule, createColoredMarkerIcon } from '@/utils/markerColors';
+import { getMarkerColorByJenisRumah, getMarkerColorByModule, createColoredMarkerIcon, createHomeIcon } from '@/utils/markerColors';
 import { getBoundaryColor } from '@/utils/boundaryColors';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -559,7 +559,7 @@ const loadAllMarkers = async () => {
                     const lng = parseFloat(house.longitude);
                     if (!isNaN(lat) && !isNaN(lng)) {
                         const color = getMarkerColorByJenisRumah(house.jenis_rumah);
-                        const markerIcon = createColoredMarkerIcon(color);
+                        const markerIcon = createHomeIcon(color);
                         const marker = L.marker([lat, lng], { icon: markerIcon });
                         marker.bindTooltip(`<b>Rumah: ${getJenisRumahLabel(house.jenis_rumah)}</b><br/>Nomor: ${house.nomor_rumah || '-'}`, {
                             permanent: false,

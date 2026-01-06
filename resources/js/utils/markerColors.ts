@@ -69,3 +69,45 @@ export const createColoredMarkerIcon = (color: string): L.DivIcon => {
     });
 };
 
+/**
+ * Membuat icon home (rumah) dengan warna tertentu
+ */
+export const createHomeIcon = (color: string): L.DivIcon => {
+    return L.divIcon({
+        className: 'custom-home-icon',
+        html: `
+            <div style="
+                width: 36px;
+                height: 36px;
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">
+                <svg 
+                    width="36" 
+                    height="36" 
+                    viewBox="0 0 24 24" 
+                    fill="none" 
+                    xmlns="http://www.w3.org/2000/svg"
+                    style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"
+                >
+                    <!-- Background circle -->
+                    <circle cx="12" cy="12" r="11" fill="white" stroke="${color}" stroke-width="2"/>
+                    <!-- Home icon -->
+                    <path 
+                        d="M12 3L20 9V21H15V14H9V21H4V9L12 3Z" 
+                        fill="${color}"
+                        stroke="${color}"
+                        stroke-width="1"
+                        stroke-linejoin="round"
+                    />
+                </svg>
+            </div>
+        `,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -18],
+    });
+};
+

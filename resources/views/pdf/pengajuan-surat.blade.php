@@ -112,8 +112,7 @@
             <div class="header-title">KECAMATAN {{ strtoupper(config('desa.kecamatan', 'Cibungbulang')) }}</div>
             <div class="header-subtitle">{{ strtoupper(config('desa.nama_desa', 'Desa Galuga')) }}</div>
             <div class="header-address">
-                Jl. Galuga, RT. 002/001, Kode Pos: 16630<br>
-                email: dsgaluga@gmail.com<br>
+                Jl. Galuga, RT. 002/001, Kode Pos: 16630, email: dsgaluga@gmail.com<br>
                 Provinsi {{ config('desa.provinsi', 'Jawa Barat') }}
             </div>
         </div>
