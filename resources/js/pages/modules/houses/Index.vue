@@ -71,23 +71,39 @@ onMounted(async () => {
     }
 });
 
-const actions = (row: any) => [
-    {
-        label: 'Detail',
-        onClick: () => router.visit(`/data-warga/houses/${row.id}`),
-        permission: props.can?.Detail,
-    },
-    {
-        label: 'Edit',
-        onClick: () => router.visit(`/data-warga/houses/${row.id}/edit`),
-        permission: props.can?.Edit,
-    },
-    {
+const actions = (row: any) => {
+    const actionList = [
+        {
+            label: 'Detail',
+            onClick: () => router.visit(`/data-warga/houses/${row.id}`),
+            permission: props.can?.Detail,
+        },
+        {
+            label: 'Edit',
+            onClick: () => router.visit(`/data-warga/houses/${row.id}/edit`),
+            permission: props.can?.Edit,
+        },
+    ];
+
+    // Tambahkan action Show Map jika ada koordinat
+    if (row.latitude && row.longitude) {
+        actionList.push({
+            label: 'Show Map',
+            onClick: () => {
+                router.visit(`/?lat=${row.latitude}&lng=${row.longitude}&house_id=${row.id}`);
+            },
+            permission: true,
+        });
+    }
+
+    actionList.push({
         label: 'Delete',
         onClick: () => pageIndex.value.handleDeleteRow(row),
         permission: props.can?.Delete,
-    },
-];
+    });
+
+    return actionList;
+};
 
 const deleteSelected = async () => {
     if (!selected.value.length) {

@@ -146,6 +146,7 @@ const handleSave = () => {
             v-model:latitude="formData.latitude"
             v-model:longitude="formData.longitude"
             marker-popup-text="Lokasi Bank Sampah"
+            :show-current-location="true"
             @location-selected="handleLocationSelected"
         />
 

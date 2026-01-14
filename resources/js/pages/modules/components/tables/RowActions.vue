@@ -19,6 +19,7 @@ import {
     ShieldCheck,
     UserCheck,
     Package,
+    MapPin,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
@@ -61,6 +62,8 @@ const getIconByLabel = (label: string) => {
             return Notebook;
         case 'Penyaluran':
             return Package;
+        case 'Show Map':
+            return MapPin;
 default:
             return FileText;
     }

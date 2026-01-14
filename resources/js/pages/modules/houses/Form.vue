@@ -461,6 +461,7 @@ const handleSave = (data: Record<string, any>) => {
             v-model:longitude="form.longitude"
             :jenis-rumah="form.jenis_rumah"
             :marker-popup-text="getMarkerPopupText()"
+            :show-current-location="true"
         />
     </div>
 </template>

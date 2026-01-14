@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import WelcomeMap from '@/components/WelcomeMap.vue';
 import HouseStats from '@/components/HouseStats.vue';
@@ -18,6 +18,12 @@ const selectedRtId = ref<string | null>(null);
 // Options
 const rwOptions = ref<{ value: string; label: string }[]>([]);
 const rtOptions = ref<{ value: string; label: string; rw_id: number }[]>([]);
+
+// Focused coordinates dari query parameter
+const focusedCoordinates = ref<{ lat: number; lng: number; house_id?: number } | null>(null);
+
+// Ref untuk map section
+const mapSectionRef = ref<HTMLElement | null>(null);
 
 // Filtered RT options berdasarkan RW yang dipilih
 const filteredRtOptions = computed(() => {
@@ -94,6 +100,39 @@ const clearFilter = () => {
     selectedRtId.value = null;
 };
 
+// Load focused coordinates dari URL query parameters
+onMounted(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const lat = urlParams.get('lat');
+    const lng = urlParams.get('lng');
+    const houseId = urlParams.get('house_id');
+    
+    if (lat && lng) {
+        const latNum = parseFloat(lat);
+        const lngNum = parseFloat(lng);
+        if (!isNaN(latNum) && !isNaN(lngNum)) {
+            focusedCoordinates.value = {
+                lat: latNum,
+                lng: lngNum,
+                house_id: houseId ? Number(houseId) : undefined
+            };
+            
+            setTimeout(() => {
+                if (mapSectionRef.value) {
+                    const headerHeight = -100;
+                    const elementPosition = mapSectionRef.value.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+                    
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 300); 
+        }
+    }
+});
+
 // Load options on mount
 loadFilterOptions();
 </script>
@@ -159,7 +198,7 @@ loadFilterOptions();
         </section>
 
         <!-- Peta Section -->
-        <section class="py-8">
+        <section ref="mapSectionRef" class="py-8">
             <div class="container mx-auto px-44">
                 <div class="mb-6 text-center">
                     <h3 class="mb-2 text-2xl font-semibold text-foreground">Peta Wilayah Desa Galuga</h3>
@@ -224,7 +263,7 @@ loadFilterOptions();
                     </Button>
                 </div>
                 
-                <WelcomeMap height="600px" :filter-params="filterParams" />
+                <WelcomeMap height="600px" :filter-params="filterParams" :focused-coordinates="focusedCoordinates" />
             </div>
         </section>
 

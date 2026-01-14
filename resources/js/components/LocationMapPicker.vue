@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
@@ -36,10 +36,17 @@ const emit = defineEmits<{
     'location-selected': [data: { lat: number; lng: number; address?: string }];
 }>();
 
+// Computed untuk memastikan button muncul secara default
+const shouldShowCurrentLocation = computed(() => {
+    // Jika prop tidak di-set (undefined), default-nya true
+    if (props.showCurrentLocation === undefined) return true;
+    return props.showCurrentLocation !== false;
+});
+
 const mapContainer = ref<HTMLElement | null>(null);
 let map: L.Map | null = null;
 let marker: L.Marker | null = null;
-let searchTimeout: NodeJS.Timeout | null = null;
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Search state
 const searchQuery = ref('');
@@ -470,46 +477,46 @@ onUnmounted(() => {
         <CardContent class="space-y-4">
             <!-- Search Bar (opsional) -->
             <div v-if="showSearch !== false" class="relative">
-                <div class="flex gap-2">
-                    <div class="relative flex-1">
-                        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            v-model="searchQuery"
-                            type="text"
-                            placeholder="Cari lokasi..."
-                            class="pl-10"
-                            @input="searchLocation"
-                            @keyup.enter="searchLocation"
-                            :disabled="isSearching"
-                        />
-                        <div v-if="isSearching" class="absolute right-3 top-1/2 -translate-y-1/2">
-                            <div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                        <div
-                            v-if="showSearchResults && searchResults.length > 0"
-                            class="absolute z-[9999] mt-1 w-full rounded-md border bg-card shadow-lg max-h-60 overflow-y-auto"
-                        >
-                            <div
-                                v-for="(result, index) in searchResults"
-                                :key="index"
-                                class="cursor-pointer border-b p-2 text-sm hover:bg-accent last:border-b-0"
-                                @click="selectSearchResult(result)"
-                            >
-                                {{ result.display_name }}
-                            </div>
-                        </div>
-                    </div>
-                    <Button
-                        v-if="showCurrentLocation !== false"
-                        type="button"
-                        variant="outline"
-                        @click="useCurrentLocation"
-                        :disabled="isLoading"
-                    >
-                        <Navigation class="mr-2 h-4 w-4" />
-                        {{ isLoading ? 'Mengambil...' : 'Lokasi Saya' }}
-                    </Button>
+                <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Cari lokasi..."
+                    class="pl-10"
+                    @input="searchLocation"
+                    @keyup.enter="searchLocation"
+                    :disabled="isSearching"
+                />
+                <div v-if="isSearching" class="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
                 </div>
+                <div
+                    v-if="showSearchResults && searchResults.length > 0"
+                    class="absolute z-[9999] mt-1 w-full rounded-md border bg-card shadow-lg max-h-60 overflow-y-auto"
+                >
+                    <div
+                        v-for="(result, index) in searchResults"
+                        :key="index"
+                        class="cursor-pointer border-b p-2 text-sm hover:bg-accent last:border-b-0"
+                        @click="selectSearchResult(result)"
+                    >
+                        {{ result.display_name }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Button Lokasi Saya - Dipisahkan, selalu muncul secara default -->
+            <div v-if="shouldShowCurrentLocation" class="flex justify-end mb-2">
+                <Button
+                    type="button"
+                    variant="outline"
+                    @click="useCurrentLocation"
+                    :disabled="isLoading"
+                    class="w-full sm:w-auto"
+                >
+                    <Navigation class="mr-2 h-4 w-4" />
+                    {{ isLoading ? 'Mengambil...' : 'Lokasi Saya' }}
+                </Button>
             </div>
 
             <!-- Map Container -->

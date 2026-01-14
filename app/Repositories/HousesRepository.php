@@ -145,10 +145,12 @@ class HousesRepository
                 'desa'        => $house->desa,
                 'kecamatan'   => $house->kecamatan,
                 'kabupaten'  => $house->kabupaten,
-                    'keterangan' => $house->keterangan,
-                    'total_residents' => $totalResidents,
-                    'foto_url' => $this->getFirstFotoUrl($house),
-                ];
+                'keterangan' => $house->keterangan,
+                'total_residents' => $totalResidents,
+                'foto_url' => $this->getFirstFotoUrl($house),
+                'latitude' => $house->latitude,
+                'longitude' => $house->longitude,
+            ];
             });
 
         $data += [

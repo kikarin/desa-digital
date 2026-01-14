@@ -651,6 +651,7 @@ const residentOptions = computed(() => {
             v-model:latitude="formData.latitude"
             v-model:longitude="formData.longitude"
             marker-popup-text="Lokasi Kegiatan"
+            :show-current-location="true"
             @location-selected="handleLocationSelected"
         />
 

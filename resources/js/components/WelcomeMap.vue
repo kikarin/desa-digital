@@ -24,6 +24,8 @@ L.Icon.Default.mergeOptions({
 const props = defineProps<{
     height?: string;
     filterParams?: { rw_id?: number; rt_id?: number };
+    focusedCoordinates?: { lat: number; lng: number; house_id?: number } | null;
+    zoomLevel?: number;
 }>();
 
 const mapContainer = ref<HTMLElement | null>(null);
@@ -861,16 +863,25 @@ onMounted(async () => {
         fillOpacity: 0,
     }).addTo(map);
 
-    // Fit ke Galuga
-    map.fitBounds(L.latLngBounds(galugaBoundary), {
-        padding: [20, 20],
-    });
-
     await loadAllMarkers();
     
     // Load boundaries RW dan RT
     await loadRwBoundaries();
     await loadRtBoundaries();
+
+    // Fokus ke koordinat jika ada focusedCoordinates
+    if (props.focusedCoordinates && map) {
+        const zoom = props.zoomLevel || 78; 
+        map.setView(
+            [props.focusedCoordinates.lat, props.focusedCoordinates.lng],
+            zoom
+        );
+    } else {
+        // Fit ke Galuga (existing code)
+        map.fitBounds(L.latLngBounds(galugaBoundary), {
+            padding: [20, 20],
+        });
+    }
 });
 
 // Watch filter changes dan reload markers
@@ -879,6 +890,21 @@ watch(
     () => {
         if (map && !isLoadingMarkers) {
             loadAllMarkers();
+        }
+    },
+    { deep: true }
+);
+
+// Watch focusedCoordinates changes
+watch(
+    () => props.focusedCoordinates,
+    (newCoords) => {
+        if (newCoords && map) {
+            const zoom = props.zoomLevel || 16; 
+            map.setView(
+                [newCoords.lat, newCoords.lng],
+                zoom
+            );
         }
     },
     { deep: true }
