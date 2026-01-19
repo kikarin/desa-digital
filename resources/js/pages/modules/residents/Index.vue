@@ -25,10 +25,15 @@ const breadcrumbs = [
 
 const columns = [
     { key: 'nik', label: 'NIK', searchable: true, orderable: true, visible: true },
+    { key: 'no_kk', label: 'No. KK', searchable: true, orderable: true, visible: true },
     { key: 'nama', label: 'Nama', searchable: true, orderable: true, visible: true },
     { key: 'tempat_lahir', label: 'Tempat Lahir', searchable: true, orderable: false, visible: true },
     { key: 'tanggal_lahir', label: 'Tanggal Lahir', searchable: false, orderable: true, visible: true },
     { key: 'jenis_kelamin', label: 'Jenis Kelamin', searchable: false, orderable: true, visible: true },
+    { key: 'nomor_rumah', label: 'Nomor Rumah', searchable: true, orderable: true, visible: true },
+    { key: 'rt', label: 'RT', searchable: true, orderable: true, visible: true },
+    { key: 'rw', label: 'RW', searchable: true, orderable: true, visible: true },
+    { key: 'desa', label: 'Desa', searchable: true, orderable: true, visible: true },
     {
         key: 'status',
         label: 'Status',
@@ -47,11 +52,7 @@ const columns = [
             return row.status || '-';
         },
     },
-    { key: 'no_kk', label: 'No. KK', searchable: true, orderable: true, visible: true },
-    { key: 'nomor_rumah', label: 'Nomor Rumah', searchable: true, orderable: true, visible: true },
-    { key: 'rt', label: 'RT', searchable: true, orderable: true, visible: true },
-    { key: 'rw', label: 'RW', searchable: true, orderable: true, visible: true },
-    { key: 'desa', label: 'Desa', searchable: true, orderable: true, visible: true },
+
 ];
 
 const selected = ref<number[]>([]);
