@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import WelcomeMap from '@/components/WelcomeMap.vue';
 import HouseStats from '@/components/HouseStats.vue';
@@ -24,6 +24,9 @@ const focusedCoordinates = ref<{ lat: number; lng: number; house_id?: number } |
 
 // Ref untuk map section
 const mapSectionRef = ref<HTMLElement | null>(null);
+
+// Window width untuk responsive map height
+const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
 // Filtered RT options berdasarkan RW yang dipilih
 const filteredRtOptions = computed(() => {
@@ -94,10 +97,22 @@ const filterParams = computed(() => {
     return params;
 });
 
+// Responsive map height
+const mapHeight = computed(() => {
+    if (windowWidth.value >= 1024) return '600px';
+    if (windowWidth.value >= 640) return '500px';
+    return '400px';
+});
+
 // Clear filter
 const clearFilter = () => {
     selectedRwId.value = null;
     selectedRtId.value = null;
+};
+
+// Window resize handler
+const handleResize = () => {
+    windowWidth.value = window.innerWidth;
 };
 
 // Load focused coordinates dari URL query parameters
@@ -131,6 +146,14 @@ onMounted(() => {
             }, 300); 
         }
     }
+
+    // Setup window resize listener untuk responsive map height
+    window.addEventListener('resize', handleResize);
+});
+
+// Cleanup on unmount
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
 });
 
 // Load options on mount
@@ -145,37 +168,37 @@ loadFilterOptions();
     <div class="min-h-screen bg-background text-foreground">
         <!-- Header -->
         <header class="sticky top-0 z-[100] w-full border-b bg-card shadow-sm">
-            <div class="container mx-auto px-4 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-4">
+            <div class="container mx-auto px-4 py-3 sm:py-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-2 sm:gap-4">
                         <img
                             src="/Lambang_Kabupaten_Bogor.png"
                             alt="Logo Kabupaten Bogor"
-                            class="h-16 w-auto object-contain"
+                            class="h-12 w-auto object-contain sm:h-16"
                         />
                         <div>
-                            <h1 class="text-2xl font-bold text-primary">SIGAP</h1>
-                            <p class="text-sm text-muted-foreground">Sistem Informasi Galuga Pintar</p>
+                            <h1 class="text-xl font-bold text-primary sm:text-2xl">SIGAP</h1>
+                            <p class="text-xs text-muted-foreground sm:text-sm">Sistem Informasi Galuga Pintar</p>
                         </div>
                     </div>
-                    <nav class="flex items-center gap-4">
+                    <nav class="flex items-center gap-2 sm:gap-4">
                 <Link
                     v-if="(page.props as any).auth?.user"
                     :href="route('dashboard')"
-                            class="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                            class="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-4 sm:py-2 sm:text-sm"
                 >
                     Dashboard
                 </Link>
                 <template v-else>
                     <Link
                         :href="route('login')"
-                                class="rounded-md border border-transparent px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                                class="rounded-md border border-transparent px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:px-4 sm:py-2 sm:text-sm"
                     >
                                 Masuk
                     </Link>
                     <Link
                         :href="route('register')"
-                                class="rounded-md border border-border bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                                class="rounded-md border border-border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 sm:px-4 sm:py-2 sm:text-sm"
                     >
                                 Daftar
                     </Link>
@@ -186,28 +209,28 @@ loadFilterOptions();
         </header>
 
         <!-- Hero Section -->
-        <section class="bg-gradient-to-b from-primary/10 to-background py-12">
+        <section class="bg-gradient-to-b from-primary/10 to-background py-8 sm:py-12">
             <div class="container mx-auto px-4 text-center">
-                <h2 class="mb-4 text-4xl font-bold text-foreground">
+                <h2 class="mb-3 text-2xl font-bold text-foreground sm:mb-4 sm:text-3xl lg:text-4xl">
                     Selamat Datang di SIGAP
                 </h2>
-                <p class="mx-auto max-w-2xl text-lg text-muted-foreground">
+                <p class="mx-auto max-w-2xl text-sm text-muted-foreground sm:text-base lg:text-lg">
                     Sistem Informasi Galuga Pintar - Platform digital untuk pelayanan administrasi dan informasi Desa Galuga, Kecamatan Cibungbulang, Kabupaten Bogor
                 </p>
             </div>
         </section>
 
         <!-- Peta Section -->
-        <section ref="mapSectionRef" class="py-8">
-            <div class="container mx-auto px-44">
-                <div class="mb-6 text-center">
-                    <h3 class="mb-2 text-2xl font-semibold text-foreground">Peta Wilayah Desa Galuga</h3>
-                    <p class="text-muted-foreground">Lokasi Desa Galuga, Kecamatan Cibungbulang, Kabupaten Bogor, Jawa Barat</p>
+        <section ref="mapSectionRef" class="py-6 sm:py-8">
+            <div class="container mx-auto px-4 sm:px-6 md:px-8 lg:px-44">
+                <div class="mb-4 text-center sm:mb-6">
+                    <h3 class="mb-2 text-xl font-semibold text-foreground sm:text-2xl">Peta Wilayah Desa Galuga</h3>
+                    <p class="text-sm text-muted-foreground sm:text-base">Lokasi Desa Galuga, Kecamatan Cibungbulang, Kabupaten Bogor, Jawa Barat</p>
                 </div>
                 
                 <!-- Filter Section -->
-                <div class="mb-4 flex flex-wrap items-end gap-4 rounded-lg border bg-card p-4">
-                    <div class="flex-1 min-w-[200px]">
+                <div class="mb-4 flex flex-col gap-4 rounded-lg border bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end">
+                    <div class="w-full flex-1 sm:min-w-[200px]">
                         <Label for="filter-rw" class="mb-2 block text-sm font-medium">Filter RW</Label>
                         <Select
                             :model-value="selectedRwId || 'all'"
@@ -229,7 +252,7 @@ loadFilterOptions();
                         </Select>
                     </div>
                     
-                    <div class="flex-1 min-w-[200px]">
+                    <div class="w-full flex-1 sm:min-w-[200px]">
                         <Label for="filter-rt" class="mb-2 block text-sm font-medium">Filter RT</Label>
                         <Select
                             :model-value="selectedRtId || 'all'"
@@ -256,52 +279,52 @@ loadFilterOptions();
                         v-if="selectedRwId || selectedRtId"
                         variant="outline"
                         @click="clearFilter"
-                        class="gap-2"
+                        class="w-full gap-2 sm:w-auto"
                     >
                         <X class="h-4 w-4" />
                         Reset Filter
                     </Button>
                 </div>
                 
-                <WelcomeMap height="600px" :filter-params="filterParams" :focused-coordinates="focusedCoordinates" />
+                <WelcomeMap :height="mapHeight" :filter-params="filterParams" :focused-coordinates="focusedCoordinates" />
             </div>
         </section>
 
         <!-- Statistik Section -->
-        <section class="py-8 bg-muted/30">
-            <div class="container mx-auto px-44">
+        <section class="py-6 bg-muted/30 sm:py-8">
+            <div class="container mx-auto px-4 sm:px-6 md:px-8 lg:px-44">
                 <HouseStats :filter-params="filterParams" />
             </div>
         </section>
 
         <!-- Footer -->
-        <footer class="border-t bg-card py-8">
+        <footer class="border-t bg-card py-6 sm:py-8">
             <div class="container mx-auto px-4">
-                <div class="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div class="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-3">
                     <div>
-                        <h4 class="mb-4 text-lg font-semibold text-foreground">SIGAP</h4>
-                        <p class="text-sm text-muted-foreground">
+                        <h4 class="mb-3 text-base font-semibold text-foreground sm:mb-4 sm:text-lg">SIGAP</h4>
+                        <p class="text-xs text-muted-foreground sm:text-sm">
                             Sistem Informasi Galuga Pintar - Platform digital untuk pelayanan administrasi Desa Galuga.
                         </p>
                     </div>
                     <div>
-                        <h4 class="mb-4 text-lg font-semibold text-foreground">Kontak</h4>
-                        <p class="text-sm text-muted-foreground">
+                        <h4 class="mb-3 text-base font-semibold text-foreground sm:mb-4 sm:text-lg">Kontak</h4>
+                        <p class="text-xs text-muted-foreground sm:text-sm">
                             Desa Galuga<br />
                             Kecamatan Cibungbulang<br />
                             Kabupaten Bogor, Jawa Barat
                         </p>
                     </div>
                     <div>
-                        <h4 class="mb-4 text-lg font-semibold text-foreground">Layanan</h4>
-                        <ul class="space-y-2 text-sm text-muted-foreground">
+                        <h4 class="mb-3 text-base font-semibold text-foreground sm:mb-4 sm:text-lg">Layanan</h4>
+                        <ul class="space-y-1.5 text-xs text-muted-foreground sm:space-y-2 sm:text-sm">
                             <li>Pengajuan Surat</li>
                             <li>Program Bantuan</li>
                             <li>Data Warga</li>
                         </ul>
                     </div>
                 </div>
-                <div class="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
+                <div class="mt-6 border-t pt-6 text-center text-xs text-muted-foreground sm:mt-8 sm:pt-8 sm:text-sm">
                     <p>&copy; {{ new Date().getFullYear() }} SIGAP - Sistem Informasi Galuga Pintar. All rights reserved.</p>
                 </div>
         </div>
