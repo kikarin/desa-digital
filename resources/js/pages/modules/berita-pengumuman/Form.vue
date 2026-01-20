@@ -92,12 +92,15 @@ const handleSave = (data: Record<string, any>) => {
         
         router.post(`/berita-pengumuman/${props.initialData.id}`, formData, {
             forceFormData: true,
-            onSuccess: () => {
-                toast({
-                    title: 'Data berhasil diperbarui',
-                    variant: 'success',
-                });
-                router.visit(`/berita-pengumuman/${props.initialData?.id}`);
+            onSuccess: (page: any) => {
+                const errors = page?.props?.errors || {};
+                if (Object.keys(errors).length === 0) {
+                    toast({
+                        title: 'Data berhasil diperbarui',
+                        variant: 'success',
+                    });
+                    router.visit(`/berita-pengumuman/${props.initialData?.id}`);
+                }
             },
             onError: (errors) => {
                 toast({
@@ -109,12 +112,15 @@ const handleSave = (data: Record<string, any>) => {
     } else {
         router.post('/berita-pengumuman', formData, {
             forceFormData: true,
-            onSuccess: () => {
-                toast({
-                    title: 'Data berhasil ditambahkan',
-                    variant: 'success',
-                });
-                router.visit('/berita-pengumuman');
+            onSuccess: (page: any) => {
+                const errors = page?.props?.errors || {};
+                if (Object.keys(errors).length === 0) {
+                    toast({
+                        title: 'Data berhasil ditambahkan',
+                        variant: 'success',
+                    });
+                    router.visit('/berita-pengumuman');
+                }
             },
             onError: (errors) => {
                 toast({
