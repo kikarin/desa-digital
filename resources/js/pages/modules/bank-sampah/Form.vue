@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ref } from 'vue';
-import { Search, MapPin, Navigation } from 'lucide-vue-next';
 import LocationMapPicker from '@/components/LocationMapPicker.vue';
 
 const { toast } = useToast();
@@ -52,7 +51,6 @@ const handleFotoChange = (event: Event) => {
     if (target.files && target.files[0]) {
         fotoFile.value = target.files[0];
         
-        // Create preview
         const reader = new FileReader();
         reader.onload = (e) => {
             fotoPreview.value = e.target?.result as string;

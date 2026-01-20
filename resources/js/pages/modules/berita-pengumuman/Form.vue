@@ -128,7 +128,7 @@ const handleSave = (data: Record<string, any>) => {
 </script>
 
 <template>
-    <div class="space-y-6">
+    <div class="space-y-1">
         <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
         
         <div>
@@ -151,6 +151,6 @@ const handleSave = (data: Record<string, any>) => {
 
 <style>
 .ck-editor__editable_inline {
-    min-height: 300px;
+    min-height: 100px;
 }
 </style>
