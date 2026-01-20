@@ -646,17 +646,8 @@ const residentOptions = computed(() => {
             </CardContent>
         </Card>
 
-        <!-- Peta Lokasi -->
-        <LocationMapPicker
-            v-model:latitude="formData.latitude"
-            v-model:longitude="formData.longitude"
-            marker-popup-text="Lokasi Kegiatan"
-            :show-current-location="true"
-            @location-selected="handleLocationSelected"
-        />
-
-        <!-- Informasi Lokasi -->
-        <Card>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
             <CardHeader>
                 <CardTitle class="text-lg">Informasi Lokasi</CardTitle>
             </CardHeader>
@@ -685,6 +676,16 @@ const residentOptions = computed(() => {
                 </div>
             </CardContent>
         </Card>
+
+            <!-- Peta Lokasi -->
+            <LocationMapPicker
+                v-model:latitude="formData.latitude"
+                v-model:longitude="formData.longitude"
+                marker-popup-text="Lokasi Kegiatan"
+                :show-current-location="true"
+                @location-selected="handleLocationSelected"
+            />
+        </div>
 
         <!-- Thumbnail/Foto Banner -->
         <Card>

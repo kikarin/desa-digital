@@ -70,8 +70,10 @@ const handleSave = (data: Record<string, any>) => {
 
 <template>
     <div class="space-y-6">
-        <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
-        <BoundaryMapPicker v-model="boundary" />
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
+            <BoundaryMapPicker v-model="boundary" />
+        </div>
     </div>
 </template>
 

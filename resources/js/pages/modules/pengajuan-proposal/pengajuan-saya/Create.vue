@@ -14,7 +14,7 @@ const props = defineProps<{
 </script>
 
 <template>
-    <PageCreate title="Tambah Pengajuan Proposal" :breadcrumbs="breadcrumbs" back-url="/pengajuan-proposal-saya">
+    <PageCreate title="Tambah Pengajuan Proposal" :breadcrumbs="breadcrumbs" back-url="/pengajuan-proposal-saya" :full-width="true">
         <Form mode="create" :list-kategori-proposal="listKategoriProposal" :list-resident="listResident" />
     </PageCreate>
 </template>

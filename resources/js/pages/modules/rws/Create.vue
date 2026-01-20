@@ -10,7 +10,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <PageCreate title="Tambah Wilayah" :breadcrumbs="breadcrumbs" back-url="/data-warga/rws">
+    <PageCreate title="Tambah Wilayah" :breadcrumbs="breadcrumbs" back-url="/data-warga/rws" :full-width="true">
         <Form mode="create" />
     </PageCreate>
 </template>

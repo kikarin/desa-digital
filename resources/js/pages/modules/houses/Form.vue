@@ -447,22 +447,31 @@ const handleSave = (data: Record<string, any>) => {
 
 <template>
     <div class="space-y-6">
-        <FormInput
-            :form-inputs="formInputs"
-            :initial-data="computedInitialData"
-            @save="handleSave"
-            @field-updated="handleFieldUpdated"
-        />
+        <div v-if="form.jenis_rumah" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FormInput
+                :form-inputs="formInputs"
+                :initial-data="computedInitialData"
+                @save="handleSave"
+                @field-updated="handleFieldUpdated"
+            />
+            
+            <LocationMapPicker
+                v-model:latitude="form.latitude"
+                v-model:longitude="form.longitude"
+                :jenis-rumah="form.jenis_rumah"
+                :marker-popup-text="getMarkerPopupText()"
+                :show-current-location="true"
+            />
+        </div>
         
-        <!-- Location Map Picker -->
-        <LocationMapPicker
-            v-if="form.jenis_rumah"
-            v-model:latitude="form.latitude"
-            v-model:longitude="form.longitude"
-            :jenis-rumah="form.jenis_rumah"
-            :marker-popup-text="getMarkerPopupText()"
-            :show-current-location="true"
-        />
+        <div v-else>
+            <FormInput
+                :form-inputs="formInputs"
+                :initial-data="computedInitialData"
+                @save="handleSave"
+                @field-updated="handleFieldUpdated"
+            />
+        </div>
     </div>
 </template>
 

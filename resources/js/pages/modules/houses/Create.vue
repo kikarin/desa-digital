@@ -15,7 +15,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <PageCreate title="Tambah Rumah" :breadcrumbs="breadcrumbs" back-url="/data-warga/houses">
+    <PageCreate title="Tambah Rumah" :breadcrumbs="breadcrumbs" back-url="/data-warga/houses" :full-width="true">
         <Form mode="create" :list-rt="listRt" :list-residents="listResidents" />
     </PageCreate>
 </template>

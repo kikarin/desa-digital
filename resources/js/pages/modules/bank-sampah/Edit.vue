@@ -13,7 +13,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <PageEdit title="Bank Sampah" :breadcrumbs="breadcrumbs" back-url="/bank-sampah">
+    <PageEdit title="Bank Sampah" :breadcrumbs="breadcrumbs" back-url="/bank-sampah" :full-width="true">
         <Form mode="edit" :initial-data="item" />
     </PageEdit>
 </template>

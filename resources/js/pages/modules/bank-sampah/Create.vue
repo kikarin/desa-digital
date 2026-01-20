@@ -9,7 +9,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <PageCreate title="Bank Sampah" :breadcrumbs="breadcrumbs" back-url="/bank-sampah">
+    <PageCreate title="Bank Sampah" :breadcrumbs="breadcrumbs" back-url="/bank-sampah" :full-width="true">
         <Form mode="create" />
     </PageCreate>
 </template>

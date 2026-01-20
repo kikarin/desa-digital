@@ -17,6 +17,7 @@ class ResidentDeathsRequest extends FormRequest
             'resident_id'      => 'required|exists:residents,id',
             'tanggal_meninggal' => 'required|date',
             'keterangan'       => 'nullable|string',
+            'surat_bukti_kematian' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:10240', // Max 10MB
         ];
     }
 }

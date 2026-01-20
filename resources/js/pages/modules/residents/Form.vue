@@ -163,6 +163,15 @@ const formInputs = computed(() => {
                 required: true,
             },
             {
+                name: 'surat_bukti_kematian',
+                label: 'Surat Bukti Kematian',
+                type: 'file' as any,
+                placeholder: 'Upload foto/PDF surat bukti kematian',
+                required: false,
+                accept: 'image/*,.pdf',
+                help: 'Format: JPG, PNG, PDF. Max 10MB',
+            } as any,
+            {
                 name: 'keterangan',
                 label: 'Keterangan',
                 type: 'textarea' as const,

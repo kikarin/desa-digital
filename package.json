@@ -27,6 +27,8 @@
         "vue-tsc": "^2.2.10"
     },
     "dependencies": {
+        "@ckeditor/ckeditor5-build-classic": "^41.4.2",
+        "@ckeditor/ckeditor5-vue": "^7.3.0",
         "@inertiajs/vue3": "^2.0.13",
         "@tailwindcss/vite": "^4.1.10",
         "@tanstack/vue-table": "^8.21.3",

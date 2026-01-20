@@ -15,7 +15,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <PageEdit title="RT" :breadcrumbs="breadcrumbs" back-url="/data-warga/rts">
+    <PageEdit title="RT" :breadcrumbs="breadcrumbs" back-url="/data-warga/rts" :full-width="true">
         <Form mode="edit" :initial-data="item" :list-rw="listRw" />
     </PageEdit>
 </template>

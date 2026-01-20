@@ -21,7 +21,7 @@ const props = defineProps<{
     formInputs: {
         name: string;
         label: string;
-        type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multi-select' | 'number' | 'radio' | 'icon' | 'checkbox' | 'date' | 'select-or-text' | 'multiple-file';
+        type: 'text' | 'email' | 'password' | 'textarea' | 'select' | 'multi-select' | 'number' | 'radio' | 'icon' | 'checkbox' | 'date' | 'select-or-text' | 'multiple-file' | 'file';
         placeholder?: string;
         required?: boolean;
         help?: string;
@@ -29,6 +29,7 @@ const props = defineProps<{
         showPassword?: { value: boolean };
         maxlength?: number;
         pattern?: string;
+        accept?: string;
     }[] | any;
     initialData?: Record<string, any>;
 }>();
@@ -761,7 +762,7 @@ const getFilteredOptions = (input: any) => {
                     <div v-else-if="input.type === 'file'" class="space-y-2">
                         <Input
                             type="file"
-                            accept="image/*"
+                            :accept="input.accept || 'image/*'"
                             :required="input.required"
                             @change="(e: Event) => {
                                 const target = e.target as HTMLInputElement;
@@ -773,7 +774,7 @@ const getFilteredOptions = (input: any) => {
                             }"
                         />
                         <div v-if="initialData?.[input.name] && typeof initialData[input.name] === 'string' && !form[input.name]" class="text-sm text-muted-foreground">
-                            Foto saat ini: <a :href="initialData[input.name]" target="_blank" class="text-primary hover:underline">Lihat foto</a>
+                            File saat ini: <a :href="initialData[input.name]" target="_blank" class="text-primary hover:underline">Lihat file</a>
                         </div>
                         <div v-if="isFile(form[input.name])" class="text-sm text-muted-foreground">
                             File baru dipilih: {{ (form[input.name] as File).name }}

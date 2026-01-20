@@ -141,17 +141,8 @@ const handleSave = () => {
 
 <template>
     <div class="space-y-6">
-        <!-- Peta Section -->
-        <LocationMapPicker
-            v-model:latitude="formData.latitude"
-            v-model:longitude="formData.longitude"
-            marker-popup-text="Lokasi Bank Sampah"
-            :show-current-location="true"
-            @location-selected="handleLocationSelected"
-        />
-
-        <!-- Form Fields -->
-        <Card>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
             <CardHeader>
                 <CardTitle class="text-lg">Informasi Bank Sampah</CardTitle>
             </CardHeader>
@@ -219,6 +210,15 @@ const handleSave = () => {
                 </div>
             </CardContent>
         </Card>
+
+            <LocationMapPicker
+                v-model:latitude="formData.latitude"
+                v-model:longitude="formData.longitude"
+                marker-popup-text="Lokasi Bank Sampah"
+                :show-current-location="true"
+                @location-selected="handleLocationSelected"
+            />
+        </div>
 
         <!-- Action Buttons -->
         <div class="flex gap-4 justify-end">

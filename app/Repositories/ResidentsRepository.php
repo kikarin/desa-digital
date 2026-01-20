@@ -9,6 +9,7 @@ use App\Repositories\ResidentStatusRepository;
 use App\Models\ResidentMoves;
 use App\Models\ResidentDeaths;
 use App\Models\ResidentStatus;
+use Illuminate\Support\Facades\Storage;
 
 class ResidentsRepository
 {
@@ -190,8 +191,13 @@ class ResidentsRepository
                 ]);
             } elseif ($item->status && $item->status->code === 'MENINGGAL' && $item->resident_deaths && $item->resident_deaths->count() > 0) {
                 $death = $item->resident_deaths->first();
+                $suratBuktiUrl = null;
+                if ($death->surat_bukti_kematian) {
+                    $suratBuktiUrl = Storage::url($death->surat_bukti_kematian);
+                }
                 $data['item'] = array_merge($item->toArray(), [
                     'tanggal_meninggal' => $death->tanggal_meninggal ? date('Y-m-d', strtotime($death->tanggal_meninggal)) : null,
+                    'surat_bukti_kematian' => $suratBuktiUrl,
                     'keterangan'        => $death->keterangan ?? null,
                 ]);
             } else {
@@ -245,6 +251,15 @@ class ResidentsRepository
         if ($item->status && $item->status->code === 'MENINGGAL' && $item->resident_deaths && $item->resident_deaths->count() > 0) {
             $death = $item->resident_deaths->first();
             $fields[] = ['label' => 'Tanggal Meninggal', 'value' => $death->tanggal_meninggal ? date('d-m-Y', strtotime($death->tanggal_meninggal)) : '-'];
+            
+            // Tampilkan surat bukti kematian
+            if ($death->surat_bukti_kematian) {
+                $suratBuktiUrl = Storage::url($death->surat_bukti_kematian);
+                $fields[] = ['label' => 'Surat Bukti Kematian', 'value' => '<div><a href="' . $suratBuktiUrl . '" target="_blank" class="text-blue-600 hover:underline">Lihat File</a></div>'];
+            } else {
+                $fields[] = ['label' => 'Surat Bukti Kematian', 'value' => 'Tidak ada bukti'];
+            }
+            
             $fields[] = ['label' => 'Keterangan', 'value' => $death->keterangan ?? '-'];
         }
 
@@ -291,18 +306,39 @@ class ResidentsRepository
         if ($status && $status->code === 'MENINGGAL') {
             if (isset($data['tanggal_meninggal'])) {
                 if ($method === 'update' && $record_sebelumnya) {
+                    // Hapus file lama jika ada
+                    $oldDeath = ResidentDeaths::where('resident_id', $model->id)->first();
+                    if ($oldDeath && $oldDeath->surat_bukti_kematian) {
+                        Storage::disk('public')->delete($oldDeath->surat_bukti_kematian);
+                    }
                     ResidentDeaths::where('resident_id', $model->id)->delete();
+                }
+                
+                // Handle upload file surat bukti kematian
+                $suratBuktiPath = null;
+                $request = request();
+                if ($request->hasFile('surat_bukti_kematian')) {
+                    $file = $request->file('surat_bukti_kematian');
+                    if ($file->isValid()) {
+                        $suratBuktiPath = $file->store('resident-deaths', 'public');
+                    }
                 }
                 
                 ResidentDeaths::create([
                     'resident_id'      => $model->id,
                     'tanggal_meninggal' => $data['tanggal_meninggal'] ?? now(),
+                    'surat_bukti_kematian' => $suratBuktiPath,
                     'keterangan'       => $data['keterangan'] ?? null,
                     'created_by'       => auth()->id(),
                     'updated_by'       => auth()->id(),
                 ]);
             }
         } else {
+            // Hapus file jika status bukan meninggal
+            $oldDeath = ResidentDeaths::where('resident_id', $model->id)->first();
+            if ($oldDeath && $oldDeath->surat_bukti_kematian) {
+                Storage::disk('public')->delete($oldDeath->surat_bukti_kematian);
+            }
             ResidentDeaths::where('resident_id', $model->id)->delete();
         }
 

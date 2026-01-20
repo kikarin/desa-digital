@@ -2,6 +2,11 @@
 import FormInput from '@/pages/modules/base-page/FormInput.vue';
 import { router } from '@inertiajs/vue3';
 import { useToast } from '@/components/ui/toast/useToast';
+import { ref, watch } from 'vue';
+import { Ckeditor } from '@ckeditor/ckeditor5-vue';
+// @ts-ignore
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
+import { Label } from '@/components/ui/label';
 
 const { toast } = useToast();
 
@@ -9,6 +14,26 @@ const props = defineProps<{
     mode: 'create' | 'edit';
     initialData?: Record<string, any>;
 }>();
+
+const editor = ClassicEditor;
+const editorConfig = {
+    toolbar: [
+        'heading', '|',
+        'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',
+        'outdent', 'indent', '|',
+        'blockQuote', 'insertTable', '|',
+        'undo', 'redo'
+    ],
+    placeholder: 'Masukkan deskripsi berita/pengumuman...',
+};
+
+const deskripsi = ref<string>(props.initialData?.deskripsi || '');
+
+watch(() => props.initialData?.deskripsi, (newValue) => {
+    if (newValue !== undefined) {
+        deskripsi.value = newValue || '';
+    }
+}, { immediate: true });
 
 const formInputs = [
     {
@@ -44,13 +69,6 @@ const formInputs = [
         placeholder: 'Pilih tanggal',
         required: true,
     },
-    {
-        name: 'deskripsi',
-        label: 'Deskripsi',
-        type: 'textarea' as const,
-        placeholder: 'Masukkan deskripsi',
-        required: false,
-    },
 ];
 
 const handleSave = (data: Record<string, any>) => {
@@ -59,16 +77,12 @@ const handleSave = (data: Record<string, any>) => {
     formData.append('tipe', data.tipe || 'berita');
     formData.append('title', data.title || '');
     formData.append('tanggal', data.tanggal || '');
-    formData.append('deskripsi', data.deskripsi || '');
+    formData.append('deskripsi', deskripsi.value || '');
     
-    // Handle file upload - jika ada file baru, kirim. Jika tidak ada file baru dan edit mode, keep existing
     if (data.foto && data.foto instanceof File) {
         formData.append('foto', data.foto);
     } else if (props.mode === 'edit' && !data.foto) {
-        // Jika edit mode dan tidak ada file baru, tidak kirim foto (repository akan keep existing)
-        // Jangan append foto ke FormData
     } else if (props.mode === 'edit' && data.foto === null) {
-        // Explicitly set to null jika user ingin hapus foto
         formData.append('foto', '');
     }
     
@@ -114,6 +128,29 @@ const handleSave = (data: Record<string, any>) => {
 </script>
 
 <template>
-    <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
+    <div class="space-y-6">
+        <FormInput :form-inputs="formInputs" :initial-data="initialData" @save="handleSave" />
+        
+        <div>
+            <Label for="deskripsi" class="block text-sm font-medium mb-2">
+                Deskripsi
+            </Label>
+            <div class="border border-input rounded-md">
+                <Ckeditor
+                    :editor="editor"
+                    v-model="deskripsi"
+                    :config="editorConfig"
+                />
+            </div>
+            <p class="text-xs text-muted-foreground mt-1">
+                Gunakan editor untuk memformat teks deskripsi
+            </p>
+        </div>
+    </div>
 </template>
 
+<style>
+.ck-editor__editable_inline {
+    min-height: 300px;
+}
+</style>

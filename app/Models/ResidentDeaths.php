@@ -24,6 +24,7 @@ class ResidentDeaths extends Model
         'resident_id',
         'tanggal_meninggal',
         'keterangan',
+        'surat_bukti_kematian',
     ];
 
     public function getActivitylogOptions(): LogOptions

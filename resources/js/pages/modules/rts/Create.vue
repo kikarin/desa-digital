@@ -14,7 +14,7 @@ const breadcrumbs = [
 </script>
 
 <template>
-    <PageCreate title="Tambah RT" :breadcrumbs="breadcrumbs" back-url="/data-warga/rts">
+    <PageCreate title="Tambah RT" :breadcrumbs="breadcrumbs" back-url="/data-warga/rts" :full-width="true">
         <Form mode="create" :list-rw="listRw" />
     </PageCreate>
 </template>

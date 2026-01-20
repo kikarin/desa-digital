@@ -274,17 +274,8 @@ const handleSave = () => {
             </CardContent>
         </Card>
 
-        <!-- Lokasi Aduan -->
-        <LocationMapPicker
-            v-model:latitude="formData.latitude"
-            v-model:longitude="formData.longitude"
-            marker-popup-text="Lokasi Aduan"
-            :show-current-location="true"
-            @location-selected="handleLocationSelected"
-        />
-
-        <!-- Informasi Lokasi -->
-        <Card>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
             <CardHeader>
                 <CardTitle class="text-lg">Informasi Lokasi</CardTitle>
             </CardHeader>
@@ -311,6 +302,16 @@ const handleSave = () => {
                 </div>
             </CardContent>
         </Card>
+
+            <!-- Lokasi Aduan -->
+            <LocationMapPicker
+                v-model:latitude="formData.latitude"
+                v-model:longitude="formData.longitude"
+                marker-popup-text="Lokasi Aduan"
+                :show-current-location="true"
+                @location-selected="handleLocationSelected"
+            />
+        </div>
 
         <!-- Bukti Laporan -->
         <Card>

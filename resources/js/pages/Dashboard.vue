@@ -260,28 +260,6 @@ const getInitials = (name: string) => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-6 p-6">
-            <!-- Header Actions -->
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                    <div class="relative">
-                        <Search class="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            class="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring h-10 w-[300px] rounded-md border pr-4 pl-9 text-sm focus-visible:ring-2 focus-visible:outline-none"
-                        />
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <Button variant="outline" size="icon">
-                        <Bell class="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                        <Settings class="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
             <!-- Stats Cards -->
             <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <Card

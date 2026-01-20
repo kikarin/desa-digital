@@ -46,7 +46,11 @@ const fields = [
             day: 'numeric',
         }),
     },
-    { label: 'Deskripsi', value: props.item.deskripsi || '-', className: 'sm:col-span-2' },
+    {
+        label: 'Deskripsi',
+        value: props.item.deskripsi ? `<div>${props.item.deskripsi}</div>` : '-',
+        className: 'sm:col-span-2',
+    },
 ];
 
 const actionFields = [

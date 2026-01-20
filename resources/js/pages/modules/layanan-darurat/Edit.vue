@@ -13,7 +13,7 @@ const props = defineProps<{
 </script>
 
 <template>
-    <PageEdit title="Edit Layanan Darurat" :breadcrumbs="breadcrumbs" back-url="/layanan-darurat">
+    <PageEdit title="Edit Layanan Darurat" :breadcrumbs="breadcrumbs" back-url="/layanan-darurat" :full-width="true">
         <Form mode="edit" :initial-data="item" />
     </PageEdit>
 </template>
