@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\PengajuanSuratController;
 use App\Http\Controllers\Api\PengajuanProposalController;
 use App\Http\Controllers\Api\ProgramBantuanController;
 use App\Http\Controllers\Api\BeritaPengumumanController;
+use App\Http\Controllers\Api\HouseController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -65,7 +66,7 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     // Pengajuan Proposal - Proposal Saya
     Route::get('/pengajuan-proposal/kategori', [PengajuanProposalController::class, 'getKategoriProposal']);
     Route::get('/pengajuan-proposal/{id}/export-pdf', [PengajuanProposalController::class, 'exportPdf']);
-    Route::post('/pengajuan-proposal/{id}/update', [PengajuanProposalController::class, 'update']); // POST untuk update dengan file
+    Route::post('/pengajuan-proposal/{id}/update', [PengajuanProposalController::class, 'update']); 
     Route::get('/pengajuan-proposal', [PengajuanProposalController::class, 'index']);
     Route::get('/pengajuan-proposal/{id}', [PengajuanProposalController::class, 'show']);
     Route::post('/pengajuan-proposal', [PengajuanProposalController::class, 'store']);
@@ -73,6 +74,12 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     // Program Bantuan - Riwayat Saya
     Route::get('/program-bantuan/riwayat-saya', [ProgramBantuanController::class, 'index']);
     Route::get('/program-bantuan/riwayat-saya/{id}', [ProgramBantuanController::class, 'show']);
+    Route::post('/program-bantuan/riwayat-saya/{id}/absen-mandiri', [ProgramBantuanController::class, 'absenMandiri']);
+    
+    // Rumah Saya - Validasi & Update Data Rumah
+    Route::get('/rumah-saya', [HouseController::class, 'getMyHouse']);
+    Route::post('/rumah-saya/validate-nomor-rumah', [HouseController::class, 'validateNomorRumah']);
+    Route::post('/rumah-saya/update', [HouseController::class, 'updateMyHouse']); // POST untuk support multipart/form-data dengan multiple foto
 });
 
 // Existing routes

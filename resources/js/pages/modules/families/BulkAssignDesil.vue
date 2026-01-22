@@ -9,33 +9,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { router } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref, onMounted, computed, watch } from 'vue';
-import { Badge } from '@/components/ui/badge';
 
 const props = defineProps<{
-    program: {
-        id: number;
-        nama_program: string;
-        tahun: number;
-        periode: string;
-        target_penerima: 'KELUARGA' | 'INDIVIDU';
-    };
     filterOptions: {
         rw?: Array<{ value: number; label: string }>;
         rt?: Array<{ value: number; label: string; rw_id?: number }>;
-        jenis_kelamin?: Array<{ value: string; label: string }>;
-        status?: Array<{ value: number; label: string }>;
     };
 }>();
 
 const { toast } = useToast();
 
 const breadcrumbs = [
-    { title: 'Program Bantuan', href: '/program-bantuan/program-bantuan' },
-    { title: 'Penerima Bantuan', href: `/program-bantuan/penerima?program_id=${props.program.id}` },
-    { title: 'Tambah Penerima', href: '#' },
+    { title: 'Data Warga', href: '#' },
+    { title: 'Kartu Keluarga', href: '/data-warga/families' },
+    { title: 'Bulk Assign Desil', href: '#' },
 ];
 
-const backUrl = computed(() => `/program-bantuan/penerima?program_id=${props.program.id}`);
+const backUrl = '/data-warga/families';
 
 // Data state
 const data = ref<any[]>([]);
@@ -45,11 +35,11 @@ const search = ref('');
 const page = ref(1);
 const perPage = ref(10);
 const total = ref(0);
+const selectedDesil = ref<number | null>(null);
 
 // Filter state
 const filterRw = ref<number | null>(null);
 const filterRt = ref<number | null>(null);
-const filterJenisKelamin = ref<string | null>(null);
 
 // Computed RT options berdasarkan RW yang dipilih
 const rtOptions = computed(() => {
@@ -58,40 +48,26 @@ const rtOptions = computed(() => {
     return props.filterOptions.rt.filter((rt) => rt.rw_id === filterRw.value);
 });
 
-// Columns berdasarkan target_type
-const columns = computed(() => {
-    if (props.program.target_penerima === 'KELUARGA') {
-        return [
-            { key: 'no_kk', label: 'No. KK', searchable: true, orderable: true, visible: true },
-            { key: 'kepala_keluarga_nama', label: 'Kepala Keluarga', searchable: true, orderable: false, visible: true },
-            { key: 'alamat', label: 'Alamat', searchable: true, orderable: false, visible: true },
-            { key: 'jumlah_anggota', label: 'Jumlah Anggota', searchable: false, orderable: false, visible: true },
-            { key: 'pernah_dapat_bantuan', label: 'Pernah Dapat Bantuan', searchable: false, orderable: false, visible: true },
-        ];
-    } else {
-        return [
-            { key: 'nik', label: 'NIK', searchable: true, orderable: true, visible: true },
-            { key: 'nama', label: 'Nama', searchable: true, orderable: true, visible: true },
-            { key: 'jenis_kelamin_label', label: 'Jenis Kelamin', searchable: false, orderable: false, visible: true },
-            { key: 'usia', label: 'Usia', searchable: false, orderable: false, visible: true },
-            { key: 'status_name', label: 'Status', searchable: false, orderable: false, visible: true },
-            { key: 'alamat', label: 'Alamat', searchable: true, orderable: false, visible: true },
-            { key: 'pernah_dapat_bantuan', label: 'Pernah Dapat Bantuan', searchable: false, orderable: false, visible: true },
-        ];
-    }
-});
+// Desil options
+const desilOptions = Array.from({ length: 10 }, (_, i) => ({
+    value: i + 1,
+    label: `Desil ${i + 1}`,
+}));
+
+// Columns
+const columns = [
+    { key: 'no_kk', label: 'No. KK', searchable: true, orderable: true, visible: true },
+    { key: 'kepala_keluarga_nama', label: 'Kepala Keluarga', searchable: true, orderable: false, visible: true },
+    { key: 'alamat', label: 'Alamat', searchable: true, orderable: false, visible: true },
+    { key: 'jumlah_anggota', label: 'Jumlah Anggota', searchable: false, orderable: false, visible: true },
+];
 
 // Fetch data
 const fetchData = async () => {
     loading.value = true;
     try {
-        const endpoint = props.program.target_penerima === 'KELUARGA'
-            ? '/api/assistance-recipients/available-families'
-            : '/api/assistance-recipients/available-residents';
-
         const params: any = {
-            program_id: props.program.id,
-            page: page.value - 1, // Backend menggunakan 0-based
+            page: page.value - 1,
             per_page: perPage.value,
         };
 
@@ -107,17 +83,12 @@ const fetchData = async () => {
             params.filter_rt_id = filterRt.value;
         }
 
-        if (props.program.target_penerima === 'INDIVIDU') {
-            if (filterJenisKelamin.value) {
-                params.filter_jenis_kelamin = filterJenisKelamin.value;
-            }
-        }
-
-        const response = await axios.get(endpoint, { params });
+        const response = await axios.get('/api/families/without-desil', { params });
         
         data.value = response.data.data || [];
         total.value = response.data.meta?.total || 0;
     } catch (error: any) {
+        console.error('Gagal mengambil data:', error);
         toast({
             title: error.response?.data?.message || 'Gagal mengambil data',
             variant: 'destructive',
@@ -128,7 +99,7 @@ const fetchData = async () => {
 };
 
 // Watch untuk refetch saat filter/search berubah
-watch([filterRw, filterRt, filterJenisKelamin], () => {
+watch([filterRw, filterRt], () => {
     page.value = 1;
     fetchData();
 });
@@ -158,42 +129,34 @@ const toggleSelectAll = (checked: boolean) => {
 
 // Handle submit
 const handleSubmit = async () => {
+    if (!selectedDesil.value) {
+        return toast({
+            title: 'Pilih desil terlebih dahulu',
+            variant: 'destructive',
+        });
+    }
+
     if (selected.value.length === 0) {
         return toast({
-            title: 'Pilih minimal satu penerima',
+            title: 'Pilih minimal satu keluarga',
             variant: 'destructive',
         });
     }
 
     try {
-        const recipients = selected.value.map((id) => {
-            if (props.program.target_penerima === 'KELUARGA') {
-                return { family_id: id };
-            } else {
-                return { resident_id: id };
-            }
-        });
-
-        await router.post('/program-bantuan/penerima/store-multiple', {
-            program_id: props.program.id,
-            target_type: props.program.target_penerima,
-            recipients,
+        await router.post('/data-warga/families/bulk-assign-desil', {
+            desil: selectedDesil.value,
+            family_ids: selected.value,
         }, {
             onSuccess: () => {
                 toast({
-                    title: `${selected.value.length} penerima berhasil ditambahkan`,
+                    title: `${selected.value.length} keluarga berhasil diassign desil ${selectedDesil.value}`,
                     variant: 'success',
                 });
-                // Redirect dengan preserve program_id dan trigger refresh
-                router.visit(backUrl.value, {
-                    onFinish: () => {
-                        // Trigger refresh di Index page
-                        window.dispatchEvent(new CustomEvent('refresh-assistance-recipients-index'));
-                    },
-                });
+                router.visit(backUrl);
             },
             onError: (errors: any) => {
-                const message = errors.message || 'Gagal menambahkan penerima';
+                const message = errors.message || 'Gagal assign desil';
                 toast({
                     title: message,
                     variant: 'destructive',
@@ -202,18 +165,10 @@ const handleSubmit = async () => {
         });
     } catch (error: any) {
         toast({
-            title: error.response?.data?.message || 'Gagal menambahkan penerima',
+            title: error.response?.data?.message || 'Gagal assign desil',
             variant: 'destructive',
         });
     }
-};
-
-// Format untuk kolom "Pernah Dapat Bantuan"
-const formatPernahDapatBantuan = (row: any) => {
-    if (row.pernah_dapat_bantuan) {
-        return '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">✓</span>';
-    }
-    return '<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200">-</span>';
 };
 
 onMounted(() => {
@@ -222,27 +177,45 @@ onMounted(() => {
 </script>
 
 <template>
-    <PageCreate title="Tambah Penerima Bantuan" :breadcrumbs="breadcrumbs" :back-url="backUrl">
+    <PageCreate title="Bulk Assign Desil" :breadcrumbs="breadcrumbs" :back-url="backUrl">
         <div class="space-y-4">
-            <!-- Program Info -->
+            <!-- Info Card -->
             <Card>
                 <CardHeader>
-                    <CardTitle class="text-lg">Program: {{ program.nama_program }}</CardTitle>
+                    <CardTitle class="text-lg">Bulk Assign Desil</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <span class="font-medium">Tahun:</span> {{ program.tahun }}
-                        </div>
-                        <div>
-                            <span class="font-medium">Periode:</span> {{ program.periode }}
-                        </div>
-                        <div>
-                            <span class="font-medium">Target Penerima:</span>
-                            <Badge :variant="program.target_penerima === 'KELUARGA' ? 'default' : 'secondary'" class="ml-2">
-                                {{ program.target_penerima === 'KELUARGA' ? 'Keluarga' : 'Individu' }}
-                            </Badge>
-                        </div>
+                    <p class="text-sm text-muted-foreground">
+                        Pilih desil dan keluarga yang akan diassign. Hanya keluarga yang belum memiliki desil yang ditampilkan.
+                    </p>
+                </CardContent>
+            </Card>
+
+            <!-- Desil Selection -->
+            <Card>
+                <CardHeader>
+                    <CardTitle class="text-lg">Pilih Desil</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div class="w-full max-w-xs">
+                        <label class="text-sm font-medium mb-2 block">Desil *</label>
+                        <Select 
+                            :model-value="selectedDesil ? String(selectedDesil) : null" 
+                            @update:model-value="(val: string) => (selectedDesil = val ? Number(val) : null)"
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Desil (1-10)" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="desil in desilOptions"
+                                    :key="desil.value"
+                                    :value="String(desil.value)"
+                                >
+                                    {{ desil.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardContent>
             </Card>
@@ -253,7 +226,7 @@ onMounted(() => {
                     <CardTitle class="text-lg">Filter</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <!-- RW Filter -->
                         <div>
                             <label class="text-sm font-medium mb-2 block">RW</label>
@@ -293,27 +266,6 @@ onMounted(() => {
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        <!-- Jenis Kelamin Filter (hanya untuk INDIVIDU) -->
-                        <div v-if="program.target_penerima === 'INDIVIDU'">
-                            <label class="text-sm font-medium mb-2 block">Jenis Kelamin</label>
-                            <Select v-model="filterJenisKelamin" @update:model-value="fetchData">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Pilih Jenis Kelamin" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem :value="null">Semua</SelectItem>
-                                    <SelectItem
-                                        v-for="jk in filterOptions.jenis_kelamin"
-                                        :key="jk.value"
-                                        :value="jk.value"
-                                    >
-                                        {{ jk.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
                     </div>
                 </CardContent>
             </Card>
@@ -322,9 +274,7 @@ onMounted(() => {
             <Card>
                 <CardHeader>
                     <div class="flex items-center justify-between">
-                        <CardTitle class="text-lg">
-                            Pilih {{ program.target_penerima === 'KELUARGA' ? 'Keluarga' : 'Warga' }}
-                        </CardTitle>
+                        <CardTitle class="text-lg">Pilih Keluarga (Belum Ada Desil)</CardTitle>
                         <div class="flex items-center gap-2">
                             <Input
                                 v-model="search"
@@ -374,7 +324,7 @@ onMounted(() => {
                                         </TableRow>
                                         <TableRow v-else-if="data.length === 0">
                                             <TableCell :colspan="columns.length + 2" class="text-center py-8 text-muted-foreground">
-                                                Tidak ada data
+                                                Tidak ada data (semua keluarga sudah memiliki desil)
                                             </TableCell>
                                         </TableRow>
                                         <TableRow
@@ -412,8 +362,7 @@ onMounted(() => {
                                                 :key="col.key"
                                                 class="text-xs sm:text-sm px-2 sm:px-4"
                                             >
-                                                <span v-if="col.key === 'pernah_dapat_bantuan'" v-html="formatPernahDapatBantuan(row)"></span>
-                                                <span v-else>{{ row[col.key] || '-' }}</span>
+                                                {{ row[col.key] || '-' }}
                                             </TableCell>
                                         </TableRow>
                                     </TableBody>
@@ -452,13 +401,16 @@ onMounted(() => {
                         <!-- Selected Count & Submit -->
                         <div class="flex items-center justify-between pt-4 border-t">
                             <div class="text-sm">
-                                <span class="font-medium">{{ selected.length }}</span> item dipilih
+                                <span class="font-medium">{{ selected.length }}</span> keluarga dipilih
                             </div>
                             <div class="flex items-center gap-2">
                                 <Button variant="outline" @click="router.visit(backUrl)">
                                     Batal
                                 </Button>
-                                <Button @click="handleSubmit" :disabled="selected.length === 0">
+                                <Button 
+                                    @click="handleSubmit" 
+                                    :disabled="selected.length === 0 || !selectedDesil"
+                                >
                                     Simpan ({{ selected.length }})
                                 </Button>
                             </div>
@@ -469,4 +421,3 @@ onMounted(() => {
         </div>
     </PageCreate>
 </template>
-

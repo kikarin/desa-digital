@@ -90,7 +90,6 @@ const loadFamilyResidents = async (recipientId: number) => {
         const response = await axios.get(`/api/assistance-recipients/${recipientId}/family-residents`);
         familyResidents.value = response.data.data || [];
     } catch (error: any) {
-        console.error('Error loading family residents:', error);
         toast({
             title: 'Gagal memuat data perwakilan',
             variant: 'destructive',
@@ -126,7 +125,6 @@ const handleSubmit = async () => {
 
         emit('success');
     } catch (error: any) {
-        console.error('Error updating distribution:', error);
         toast({
             title: error.response?.data?.message || 'Gagal memperbarui status penyaluran',
             variant: 'destructive',

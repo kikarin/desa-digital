@@ -26,6 +26,7 @@ class Families extends Model
         'no_kk',
         'kepala_keluarga_id',
         'status',
+        'desil',
     ];
 
     public function getActivitylogOptions(): LogOptions

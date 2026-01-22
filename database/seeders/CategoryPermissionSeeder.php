@@ -58,8 +58,9 @@ class CategoryPermissionSeeder extends Seeder
                 'permission' => 'CRUD',
             ],
             [
-                'name'       => 'Families',
-                'permission' => 'CRUD',
+                'name'              => 'Families',
+                'permission'        => 'CRUD',
+                'permission_common' => ['Families Bulk Assign Desil'],
             ],
             [
                 'name'       => 'Residents',

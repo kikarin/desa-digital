@@ -143,6 +143,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Families Routes
 Route::middleware(['auth', 'verified'])->group(function () {
+        // Route khusus harus diletakkan sebelum resource route
+        Route::get('/data-warga/families/bulk-assign-desil', [FamiliesController::class, 'bulkAssignDesil'])->name('families.bulk-assign-desil');
+        Route::post('/data-warga/families/bulk-assign-desil', [FamiliesController::class, 'storeBulkAssignDesil'])->name('families.store-bulk-assign-desil');
+        Route::get('/api/families/without-desil', [FamiliesController::class, 'getFamiliesWithoutDesil']);
+        
         Route::resource('/data-warga/families', FamiliesController::class)->names('families');
         Route::get('/api/families', [FamiliesController::class, 'apiIndex']);
         Route::get('/api/families/{id}', [FamiliesController::class, 'apiShow']);

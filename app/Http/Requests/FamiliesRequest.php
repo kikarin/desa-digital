@@ -18,6 +18,7 @@ class FamiliesRequest extends FormRequest
             'house_id' => 'required|exists:houses,id',
             'no_kk'    => 'required|string|size:16|regex:/^[0-9]+$/',
             'status'   => 'required|in:AKTIF,NON_AKTIF',
+            'desil'    => 'nullable|integer|min:1|max:10',
         ];
 
         if ($this->isMethod('patch') || $this->isMethod('put')) {

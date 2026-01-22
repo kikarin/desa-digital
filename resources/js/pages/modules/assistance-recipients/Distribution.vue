@@ -81,7 +81,6 @@ const fetchData = async () => {
         tableRows.value = response.data.data || [];
         total.value = response.data.meta?.total || 0;
     } catch (error: any) {
-        console.error('Error fetching data:', error);
         toast({
             title: 'Gagal mengambil data',
             variant: 'destructive',

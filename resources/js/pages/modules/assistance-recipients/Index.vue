@@ -103,6 +103,19 @@ const columns = computed(() => {
             },
         },
         {
+            key: 'penerima_lapangan',
+            label: 'Perwakilan',
+            searchable: false,
+            orderable: false,
+            visible: true,
+            format: (row: any) => {
+                if (row.penerima_lapangan && row.penerima_lapangan.nama) {
+                    return row.penerima_lapangan.nama;
+                }
+                return '-';
+            },
+        },
+        {
             key: 'rt',
             label: 'RT',
             searchable: false,
@@ -156,7 +169,48 @@ const columns = computed(() => {
             visible: true,
             format: (row: any) => {
                 if (row.tanggal_penyaluran) {
-                    return new Date(row.tanggal_penyaluran).toLocaleDateString('id-ID');
+                    return new Date(row.tanggal_penyaluran).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    });
+                }
+                return '-';
+            },
+        },
+        {
+            key: 'absen_mandiri',
+            label: 'Absen Mandiri',
+            searchable: false,
+            orderable: false,
+            visible: true,
+            format: (row: any) => {
+                if (row.absen_mandiri) {
+                    return `<span class="px-2 py-1 text-xs font-semibold text-indigo-800 bg-indigo-100 rounded-full dark:bg-indigo-900 dark:text-indigo-200 flex items-center gap-1 inline-flex">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        Absen Mandiri
+                    </span>`;
+                }
+                return '-';
+            },
+        },
+        {
+            key: 'foto_bukti',
+            label: 'Foto Bukti',
+            searchable: false,
+            orderable: false,
+            visible: true,
+            format: (row: any) => {
+                if (row.foto_bukti_url) {
+                    return `<button 
+                        onclick="window.open('${row.foto_bukti_url}', '_blank')" 
+                        class="px-2 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full cursor-pointer transition-colors">
+                        Lihat Foto
+                    </button>`;
                 }
                 return '-';
             },
@@ -181,7 +235,6 @@ onMounted(async () => {
             filterOptions.value = response.data.filterOptions;
         }
     } catch (error) {
-        console.error('Gagal mengambil filter options:', error);
     }
 });
 
@@ -205,12 +258,7 @@ const actions = (row: any) => {
         {
             label: 'Detail',
             onClick: () => {
-                // Arahkan ke detail families atau resident berdasarkan target_type
-                if (row.target_type === 'KELUARGA' && row.family_id) {
-                    router.visit(`/data-warga/families/${row.family_id}`);
-                } else if (row.target_type === 'INDIVIDU' && row.resident_id) {
-                    router.visit(`/data-warga/residents/${row.resident_id}`);
-                }
+                router.visit(`/program-bantuan/penerima/${row.id}`);
             },
             permission: props.can?.Detail,
         },
@@ -255,7 +303,6 @@ const deleteSelected = async () => {
             variant: 'success',
         });
     } catch (error: any) {
-        console.error('Gagal menghapus data:', error);
         const message = error.response?.data?.message || 'Gagal menghapus data';
         toast({
             title: message,

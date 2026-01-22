@@ -63,6 +63,11 @@ class AssistanceRecipientsRepository
             $query->where('assistance_recipients.status', request('filter_status'));
         }
 
+        // Filter berdasarkan absen_mandiri
+        if (request('filter_absen_mandiri')) {
+            $query->where('assistance_recipients.absen_mandiri', request('filter_absen_mandiri') === 'true' ? 1 : 0);
+        }
+
         // Filter berdasarkan RT/RW
         // Untuk filter RT/RW, perlu join dengan families/residents -> house -> rt -> rw
         if (request('filter_rw_id') || request('filter_rt_id')) {
@@ -180,7 +185,10 @@ class AssistanceRecipientsRepository
             'resident_id'           => $recipient->resident_id,
             'kepala_keluarga_id'    => $recipient->kepala_keluarga_id,
             'status'                => $recipient->status,
-            'tanggal_penyaluran'    => $recipient->tanggal_penyaluran,
+            'tanggal_penyaluran'    => $recipient->tanggal_penyaluran ? ($recipient->tanggal_penyaluran instanceof \Carbon\Carbon ? $recipient->tanggal_penyaluran->format('Y-m-d H:i:s') : $recipient->tanggal_penyaluran) : null,
+            'foto_bukti_pengambilan' => $recipient->foto_bukti_pengambilan,
+            'foto_bukti_url'        => $recipient->foto_bukti_pengambilan ? asset('storage/' . $recipient->foto_bukti_pengambilan) : null,
+            'absen_mandiri'         => $recipient->absen_mandiri ?? false,
             'nama_program'          => $recipient->program ? $recipient->program->nama_program : null,
             'tahun'                 => $recipient->program ? $recipient->program->tahun : null,
             'periode'               => $recipient->program ? $recipient->program->periode : null,
@@ -271,6 +279,19 @@ class AssistanceRecipientsRepository
             // Tambahkan data tambahan ke item
             $data['item'] = array_merge($item->toArray(), [
                 'nama_program' => $item->program ? $item->program->nama_program : null,
+                'foto_bukti_url' => $item->foto_bukti_pengambilan 
+                    ? asset('storage/' . $item->foto_bukti_pengambilan) 
+                    : null,
+                'absen_mandiri' => $item->absen_mandiri ?? false,
+                'program' => $item->program ? [
+                    'id' => $item->program->id,
+                    'nama_program' => $item->program->nama_program,
+                    'tahun' => $item->program->tahun,
+                    'periode' => $item->program->periode,
+                    'tanggal_penyaluran' => $item->program->tanggal_penyaluran,
+                    'jam_mulai_pengambilan' => $item->program->jam_mulai_pengambilan,
+                    'jam_selesai_pengambilan' => $item->program->jam_selesai_pengambilan,
+                ] : null,
             ]);
         }
         
@@ -433,6 +454,9 @@ class AssistanceRecipientsRepository
     {
         $familiesRepo = app(FamiliesRepository::class);
         
+        // Get program untuk cek desil_min dan desil_max
+        $program = \App\Models\AssistanceProgram::find($programId);
+        
         // Get families yang sudah terdaftar di program ini (hanya yang tidak soft-deleted)
         $existingFamilyIds = $this->model::where('assistance_program_id', $programId)
             ->where('target_type', 'KELUARGA')
@@ -448,6 +472,7 @@ class AssistanceRecipientsRepository
                 'families.no_kk',
                 'families.kepala_keluarga_id',
                 'families.status',
+                'families.desil',
                 'houses.nomor_rumah',
                 'rts.nomor_rt',
                 'rws.nomor_rw',
@@ -460,6 +485,12 @@ class AssistanceRecipientsRepository
             ->leftJoin('rws', 'rts.rw_id', '=', 'rws.id')
             ->where('families.status', 'AKTIF') // Hanya yang aktif
             ->whereNotIn('families.id', $existingFamilyIds); // Exclude yang sudah terdaftar
+
+        // Filter berdasarkan desil (jika program punya desil_min dan desil_max)
+        if ($program && $program->desil_min && $program->desil_max) {
+            $query->whereNotNull('families.desil') // Hanya yang sudah ada desil
+                  ->whereBetween('families.desil', [$program->desil_min, $program->desil_max]);
+        }
 
         // Filter RT/RW
         if (isset($filters['rw_id'])) {
@@ -499,6 +530,9 @@ class AssistanceRecipientsRepository
      */
     public function getAvailableResidents($programId, $filters = [])
     {
+        // Get program untuk cek desil_min dan desil_max
+        $program = \App\Models\AssistanceProgram::find($programId);
+        
         // Get residents yang sudah terdaftar di program ini (hanya yang tidak soft-deleted)
         $existingResidentIds = $this->model::where('assistance_program_id', $programId)
             ->where('target_type', 'INDIVIDU')
@@ -517,6 +551,7 @@ class AssistanceRecipientsRepository
                 'residents.jenis_kelamin',
                 'residents.status_id',
                 'families.no_kk',
+                'families.desil',
                 'houses.nomor_rumah',
                 'rts.nomor_rt',
                 'rws.nomor_rw',
@@ -532,6 +567,12 @@ class AssistanceRecipientsRepository
             ->leftJoin('resident_statuses', 'residents.status_id', '=', 'resident_statuses.id')
             ->where('residents.status_id', '!=', null) // Hanya yang aktif (asumsi status_id null = nonaktif)
             ->whereNotIn('residents.id', $existingResidentIds); // Exclude yang sudah terdaftar
+
+        // Filter berdasarkan desil keluarga (jika program punya desil_min dan desil_max)
+        if ($program && $program->desil_min && $program->desil_max) {
+            $query->whereNotNull('families.desil') // Hanya yang keluarganya sudah ada desil
+                  ->whereBetween('families.desil', [$program->desil_min, $program->desil_max]);
+        }
 
         // Filter RT/RW
         if (isset($filters['rw_id'])) {
@@ -793,6 +834,17 @@ class AssistanceRecipientsRepository
                 if (empty($data['tanggal_penyaluran'])) {
                     throw new \Exception('Tanggal penyaluran wajib diisi untuk status DATANG');
                 }
+                
+                // Validasi jadwal pengambilan
+                $recipient->load('program');
+                $program = $recipient->program;
+                if ($program) {
+                    $jadwalValidation = $this->validateJadwalPengambilan($program);
+                    if (!$jadwalValidation['valid']) {
+                        throw new \Exception($jadwalValidation['message']);
+                    }
+                }
+                
                 // penerima_lapangan_id opsional
             } else if ($data['status'] === 'TIDAK_DATANG') {
                 // Jika TIDAK_DATANG, penerima_lapangan_id harus NULL
@@ -835,6 +887,61 @@ class AssistanceRecipientsRepository
             DB::rollback();
             throw $e;
         }
+    }
+
+    /**
+     * Validasi apakah masih dalam jadwal pengambilan
+     */
+    private function validateJadwalPengambilan($program)
+    {
+        if (!$program->tanggal_penyaluran) {
+            return [
+                'valid' => false,
+                'message' => 'Program belum memiliki jadwal penyaluran',
+            ];
+        }
+
+        $now = \Carbon\Carbon::now('Asia/Jakarta');
+        $tanggalPenyaluran = \Carbon\Carbon::parse($program->tanggal_penyaluran, 'Asia/Jakarta');
+        
+        // Cek apakah sudah tanggal penyaluran
+        if ($now->format('Y-m-d') < $tanggalPenyaluran->format('Y-m-d')) {
+            return [
+                'valid' => false,
+                'message' => 'Jadwal pengambilan belum dimulai. Tanggal penyaluran: ' . $tanggalPenyaluran->format('d F Y'),
+            ];
+        }
+
+        // Jika ada jam, validasi jam
+        if ($program->jam_mulai_pengambilan && $program->jam_selesai_pengambilan) {
+            $jamMulai = \Carbon\Carbon::parse($program->tanggal_penyaluran . ' ' . $program->jam_mulai_pengambilan, 'Asia/Jakarta');
+            $jamSelesai = \Carbon\Carbon::parse($program->tanggal_penyaluran . ' ' . $program->jam_selesai_pengambilan, 'Asia/Jakarta');
+            
+            if ($now->lt($jamMulai)) {
+                return [
+                    'valid' => false,
+                    'message' => 'Jadwal pengambilan belum dimulai. Jam mulai: ' . $jamMulai->format('H:i'),
+                ];
+            }
+            
+            if ($now->gt($jamSelesai)) {
+                return [
+                    'valid' => false,
+                    'message' => 'Jadwal pengambilan sudah berakhir. Jam selesai: ' . $jamSelesai->format('H:i'),
+                ];
+            }
+        } elseif ($program->jam_mulai_pengambilan) {
+            // Hanya ada jam mulai
+            $jamMulai = \Carbon\Carbon::parse($program->tanggal_penyaluran . ' ' . $program->jam_mulai_pengambilan, 'Asia/Jakarta');
+            if ($now->lt($jamMulai)) {
+                return [
+                    'valid' => false,
+                    'message' => 'Jadwal pengambilan belum dimulai. Jam mulai: ' . $jamMulai->format('H:i'),
+                ];
+            }
+        }
+
+        return ['valid' => true];
     }
 }
 

@@ -25,7 +25,12 @@ class AssistanceProgram extends Model
         'tahun',
         'periode',
         'target_penerima',
+        'desil_min',
+        'desil_max',
         'status',
+        'tanggal_penyaluran',
+        'jam_mulai_pengambilan',
+        'jam_selesai_pengambilan',
         'keterangan',
     ];
 

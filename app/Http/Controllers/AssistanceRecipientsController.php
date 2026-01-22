@@ -252,6 +252,10 @@ class AssistanceRecipientsController extends Controller implements HasMiddleware
                         'rw_id' => $rt->rw_id,
                     ];
                 })->toArray(),
+                'absen_mandiri' => [
+                    ['value' => 'true', 'label' => 'Ya (Absen Mandiri)'],
+                    ['value' => 'false', 'label' => 'Tidak (Admin)'],
+                ],
             ],
         ]);
     }

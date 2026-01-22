@@ -7,12 +7,14 @@ const props = defineProps<{
     title: string;
     createUrl?: string;
     createMultipleUrl?: string;
+    bulkAssignDesilUrl?: string;
     importUrl?: string;
     onImportClick?: () => void;
     selected: number[];
     onDeleteSelected: () => void;
     canCreate?: boolean;
     canCreateMultiple?: boolean;
+    canBulkAssignDesil?: boolean;
     canDelete?: boolean;
     canImport?: boolean;
     showFilter?: boolean;
@@ -64,6 +66,10 @@ const handleImportClick = () => {
 
             <Link v-if="props.createMultipleUrl && props.canCreateMultiple !== false" :href="props.createMultipleUrl">
                 <Button variant="outline" size="sm">+ Create Multiple</Button>
+            </Link>
+
+            <Link v-if="props.bulkAssignDesilUrl && props.canBulkAssignDesil !== false" :href="props.bulkAssignDesilUrl">
+                <Button variant="outline" size="sm">Bulk Assign Desil</Button>
             </Link>
 
             <Button 

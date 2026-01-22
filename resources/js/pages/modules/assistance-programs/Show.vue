@@ -13,6 +13,11 @@ const props = defineProps<{
         periode: string | null;
         target_penerima: string;
         status: string;
+        tanggal_penyaluran?: string;
+        jam_mulai_pengambilan?: string;
+        jam_selesai_pengambilan?: string;
+        desil_min?: number;
+        desil_max?: number;
         keterangan: string | null;
         created_at: string;
         created_by_user: {
@@ -37,7 +42,47 @@ const getTargetPenerimaLabel = (value: string) => {
 };
 
 const getStatusLabel = (value: string) => {
-    return value === 'SELESAI' ? 'Selesai' : 'Proses';
+    const labels: Record<string, string> = {
+        'PROSES': 'Proses',
+        'PENYALURAN': 'Penyaluran',
+        'SELESAI': 'Selesai',
+    };
+    return labels[value] || value;
+};
+
+const getJadwalLabel = () => {
+    if (!props.item.tanggal_penyaluran) {
+        return '-';
+    }
+    
+    const tanggal = new Date(props.item.tanggal_penyaluran).toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+    
+    if (props.item.jam_mulai_pengambilan && props.item.jam_selesai_pengambilan) {
+        const jamMulai = props.item.jam_mulai_pengambilan.substring(0, 5);
+        const jamSelesai = props.item.jam_selesai_pengambilan.substring(0, 5);
+        return `${tanggal}, ${jamMulai} - ${jamSelesai} WIB`;
+    } else if (props.item.jam_mulai_pengambilan) {
+        const jamMulai = props.item.jam_mulai_pengambilan.substring(0, 5);
+        return `${tanggal}, mulai ${jamMulai} WIB`;
+    }
+    
+    return tanggal;
+};
+
+const getDesilLabel = () => {
+    if (!props.item.desil_min || !props.item.desil_max) {
+        return '-';
+    }
+    
+    if (props.item.desil_min === props.item.desil_max) {
+        return `Desil ${props.item.desil_min}`;
+    }
+    
+    return `Desil ${props.item.desil_min} - ${props.item.desil_max}`;
 };
 
 const fields = [
@@ -45,7 +90,9 @@ const fields = [
     { label: 'Tahun', value: props.item.tahun.toString() },
     { label: 'Periode', value: props.item.periode || '-' },
     { label: 'Target Penerima', value: getTargetPenerimaLabel(props.item.target_penerima) },
+    { label: 'Desil Target', value: getDesilLabel() },
     { label: 'Status', value: getStatusLabel(props.item.status) },
+    { label: 'Jadwal Penyaluran', value: getJadwalLabel() },
     { label: 'Keterangan', value: props.item.keterangan || '-' },
 ];
 

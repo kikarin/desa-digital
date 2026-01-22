@@ -34,6 +34,8 @@ class AssistanceProgramsRepository
             'assistance_programs.tahun', 
             'assistance_programs.periode', 
             'assistance_programs.target_penerima', 
+            'assistance_programs.desil_min',
+            'assistance_programs.desil_max',
             'assistance_programs.status', 
             'assistance_programs.keterangan'
         )
@@ -53,6 +55,8 @@ class AssistanceProgramsRepository
             'assistance_programs.tahun',
             'assistance_programs.periode',
             'assistance_programs.target_penerima',
+            'assistance_programs.desil_min',
+            'assistance_programs.desil_max',
             'assistance_programs.status',
             'assistance_programs.keterangan'
         );
@@ -112,6 +116,8 @@ class AssistanceProgramsRepository
                     'tahun'         => $program->tahun,
                     'periode'       => $program->periode,
                     'target_penerima' => $program->target_penerima,
+                    'desil_min'     => $program->desil_min,
+                    'desil_max'     => $program->desil_max,
                     'status'        => $program->status,
                     'keterangan'    => $program->keterangan,
                     'items_count'   => (int) $program->items_count,
@@ -146,6 +152,8 @@ class AssistanceProgramsRepository
                 'tahun'         => $program->tahun,
                 'periode'       => $program->periode,
                 'target_penerima' => $program->target_penerima,
+                'desil_min'     => $program->desil_min,
+                'desil_max'     => $program->desil_max,
                 'status'        => $program->status,
                 'keterangan'    => $program->keterangan,
                 'items_count'   => (int) $program->items_count,
@@ -181,7 +189,59 @@ class AssistanceProgramsRepository
      */
     public function customShow($data, $item = null)
     {
+        if ($item) {
+            // Auto-update status berdasarkan jadwal
+            $this->autoUpdateStatusBasedOnSchedule($item);
+            $item->refresh();
+        }
         return $data;
+    }
+
+    /**
+     * Auto-update status program berdasarkan jadwal
+     */
+    private function autoUpdateStatusBasedOnSchedule($program)
+    {
+        if (!$program->tanggal_penyaluran) {
+            return;
+        }
+
+        $now = \Carbon\Carbon::now('Asia/Jakarta');
+        $tanggalPenyaluran = \Carbon\Carbon::parse($program->tanggal_penyaluran, 'Asia/Jakarta');
+        
+        // Tentukan jam mulai dan jam selesai
+        $jamMulai = null;
+        $jamSelesai = null;
+        
+        if ($program->jam_mulai_pengambilan) {
+            $jamMulai = \Carbon\Carbon::parse($program->tanggal_penyaluran . ' ' . $program->jam_mulai_pengambilan, 'Asia/Jakarta');
+        } else {
+            $jamMulai = $tanggalPenyaluran->copy()->startOfDay();
+        }
+        
+        if ($program->jam_selesai_pengambilan) {
+            $jamSelesai = \Carbon\Carbon::parse($program->tanggal_penyaluran . ' ' . $program->jam_selesai_pengambilan, 'Asia/Jakarta');
+        } else {
+            $jamSelesai = $tanggalPenyaluran->copy()->endOfDay();
+        }
+
+        // Cek status berdasarkan waktu
+        if ($now->gt($jamSelesai)) {
+            // Sudah lewat jadwal -> SELESAI
+            if ($program->status !== 'SELESAI') {
+                $program->update(['status' => 'SELESAI']);
+            }
+        } elseif ($now->gte($jamMulai) && $now->lte($jamSelesai)) {
+            // Masih dalam jadwal -> PENYALURAN
+            if ($program->status !== 'PENYALURAN') {
+                $program->update(['status' => 'PENYALURAN']);
+            }
+        } else {
+            // Belum masuk jadwal -> PROSES
+            if ($program->status !== 'PROSES') {
+                $program->update(['status' => 'PROSES']);
+            }
+        }
     }
 
     /**

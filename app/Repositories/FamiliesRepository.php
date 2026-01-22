@@ -23,7 +23,7 @@ class FamiliesRepository
     public function customIndex($data)
     {
         $query = $this->model->with('house.rt.rw')
-            ->select('families.id', 'families.house_id', 'families.no_kk', 'families.kepala_keluarga_id', 'families.status',
+            ->select('families.id', 'families.house_id', 'families.no_kk', 'families.kepala_keluarga_id', 'families.status', 'families.desil',
                      'houses.nomor_rumah', 'rts.nomor_rt', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
             ->leftJoin('houses', 'families.house_id', '=', 'houses.id')
             ->leftJoin('rts', 'houses.rt_id', '=', 'rts.id')
@@ -111,6 +111,7 @@ class FamiliesRepository
                     'id'         => $family->id,
                     'no_kk'      => $family->no_kk,
                     'status'     => $family->status,
+                    'desil'      => $family->desil,
                     'nomor_rumah' => $family->nomor_rumah,
                     'rt'         => $family->nomor_rt,
                     'rw'         => $family->nomor_rw,
@@ -139,6 +140,7 @@ class FamiliesRepository
                 'id'          => $family->id,
                 'no_kk'       => $family->no_kk,
                 'status'      => $family->status,
+                'desil'       => $family->desil,
                 'nomor_rumah' => $family->nomor_rumah,
                 'rt'          => $family->nomor_rt,
                 'rw'          => $family->nomor_rw,
@@ -189,10 +191,30 @@ class FamiliesRepository
             $kepalaKeluargaInfo = $kepalaKeluarga->nik . ' - ' . $kepalaKeluarga->nama;
         }
 
+        // Helper untuk format desil
+        $desilLabel = '-';
+        $desilValue = $item->desil;
+        if ($desilValue) {
+            $desilLabels = [
+                1 => 'Desil 1 - Sangat Miskin',
+                2 => 'Desil 2 - Miskin',
+                3 => 'Desil 3 - Hampir Miskin',
+                4 => 'Desil 4 - Rentan Miskin',
+                5 => 'Desil 5 - Pas-pasan',
+                6 => 'Desil 6 - Menengah ke Atas',
+                7 => 'Desil 7 - Menengah ke Atas',
+                8 => 'Desil 8 - Menengah ke Atas',
+                9 => 'Desil 9 - Menengah ke Atas',
+                10 => 'Desil 10 - Menengah ke Atas',
+            ];
+            $desilLabel = $desilLabels[$desilValue] ?? "Desil {$desilValue}";
+        }
+
         $fields = [
             ['label' => 'No. KK', 'value' => $item->no_kk ?? '-'],
             ['label' => 'Rumah', 'value' =>'NO '. ($item->house-> nomor_rumah ?? '-') . ' - RT ' . ($item->house->rt->nomor_rt ?? '') . ' - RW ' . ($item->house->rt->rw->nomor_rw ?? '') . ' - ' . ($item->house->rt->rw->desa ?? '')],
             ['label' => 'Status', 'value' => $item->status ?? '-'],
+            ['label' => 'Desil', 'value' => $desilLabel, 'desil' => $desilValue], // Tambahkan desil value untuk styling
             ['label' => 'Kepala Keluarga', 'value' => $kepalaKeluargaInfo],
         ];
 
@@ -272,6 +294,54 @@ class FamiliesRepository
         ];
 
         return $data;
+    }
+
+    /**
+     * Get families without desil (untuk bulk assign)
+     */
+    public function getFamiliesWithoutDesil($filters = [])
+    {
+        $query = $this->model->with('house.rt.rw', 'kepala_keluarga', 'residents')
+            ->select(
+                'families.id',
+                'families.no_kk',
+                'families.kepala_keluarga_id',
+                'families.status',
+                'families.desil',
+                'houses.nomor_rumah',
+                'rts.nomor_rt',
+                'rws.nomor_rw',
+                'rws.desa',
+                'rws.kecamatan',
+                'rws.kabupaten'
+            )
+            ->leftJoin('houses', 'families.house_id', '=', 'houses.id')
+            ->leftJoin('rts', 'houses.rt_id', '=', 'rts.id')
+            ->leftJoin('rws', 'rts.rw_id', '=', 'rws.id')
+            ->where('families.status', 'AKTIF')
+            ->whereNull('families.desil'); // Hanya yang belum ada desil
+
+        // Filter RT/RW
+        if (isset($filters['rw_id'])) {
+            $query->where('rws.id', $filters['rw_id']);
+        }
+
+        if (isset($filters['rt_id'])) {
+            $query->where('rts.id', $filters['rt_id']);
+        }
+
+        // Search
+        if (isset($filters['search'])) {
+            $searchTerm = $filters['search'];
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('families.no_kk', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('houses.nomor_rumah', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('rts.nomor_rt', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('rws.nomor_rw', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        return $query;
     }
 }
 

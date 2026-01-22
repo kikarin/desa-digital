@@ -24,7 +24,12 @@ class AssistanceProgramsRequest extends FormRequest
             'tahun'            => 'required|integer|min:2000|max:2100',
             'periode'          => 'nullable|string|max:50',
             'target_penerima'  => 'required|in:KELUARGA,INDIVIDU',
-            'status'           => 'required|in:PROSES,SELESAI',
+            'desil_min'        => 'nullable|integer|min:1|max:10',
+            'desil_max'        => 'nullable|integer|min:1|max:10|gte:desil_min',
+            'status'           => 'required|in:PROSES,PENYALURAN,SELESAI',
+            'tanggal_penyaluran' => 'nullable|date',
+            'jam_mulai_pengambilan' => 'nullable|date_format:H:i',
+            'jam_selesai_pengambilan' => 'nullable|date_format:H:i|after:jam_mulai_pengambilan',
             'keterangan'        => 'nullable|string',
         ];
 

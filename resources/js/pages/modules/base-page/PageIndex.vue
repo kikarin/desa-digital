@@ -119,6 +119,7 @@ const props = withDefaults(defineProps<{
     };
     hideCreateButton?: boolean;
     createMultipleUrl?: string;
+    bulkAssignDesilUrl?: string;
     importUrl?: string;
     onImportClick?: () => void;
     canImport?: boolean;
@@ -316,11 +317,13 @@ defineExpose({ fetchData });
                 :on-delete-selected="() => (showConfirm = true)"
                 :can-create="props.can?.Add && !props.hideCreateButton"
                 :can-create-multiple="props.can?.Add"
+                :can-bulk-assign-desil="props.can?.Add"
                 :can-delete="props.can?.Delete"
                 :show-filter="props.showFilter"
                 :on-filter-click="handleFilterClick"
                 v-bind="createUrl && !props.hideCreateButton ? { createUrl } : {}"
                 :create-multiple-url="props.createMultipleUrl"
+                :bulk-assign-desil-url="props.bulkAssignDesilUrl"
                 :can-delete-selected="props.canDeleteSelected"
                 :import-url="props.importUrl"
                 :on-import-click="props.onImportClick"

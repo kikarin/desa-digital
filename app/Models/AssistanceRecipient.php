@@ -28,11 +28,14 @@ class AssistanceRecipient extends Model
         'penerima_lapangan_id',
         'status',
         'tanggal_penyaluran',
+        'foto_bukti_pengambilan',
+        'absen_mandiri',
         'catatan',
     ];
 
     protected $casts = [
-        'tanggal_penyaluran' => 'date',
+        'tanggal_penyaluran' => 'datetime',
+        'absen_mandiri' => 'boolean',
     ];
 
     /**
