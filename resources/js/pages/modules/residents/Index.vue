@@ -42,8 +42,8 @@
             visible: true,
             format: (row: any) => {
                 const status = row.status?.toUpperCase();
-                if (status === 'AKTIF') {
-                    return '<span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200">AKTIF</span>';
+                if (status === 'ADA') {
+                    return '<span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200">ADA</span>';
                 } else if (status === 'PINDAH') {
                     return '<span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">PINDAH</span>';
                 } else if (status === 'MENINGGAL') {

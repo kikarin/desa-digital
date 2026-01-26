@@ -41,18 +41,18 @@ const formInputs = computed(() => [
             { value: 'NON_AKTIF', label: 'NON_AKTIF' },
         ],
     },
-    {
-        name: 'desil',
-        label: 'Desil',
-        type: 'select' as const,
-        placeholder: 'Pilih Desil (1-10)',
-        required: false,
-        help: 'Pilih desil untuk keluarga ini (opsional)',
-        options: Array.from({ length: 10 }, (_, i) => ({
-            value: i + 1,
-            label: `Desil ${i + 1}`,
-        })),
-    },
+    // {
+    //     name: 'desil',
+    //     label: 'Desil',
+    //     type: 'select' as const,
+    //     placeholder: 'Pilih Desil (1-10)',
+    //     required: false,
+    //     help: 'Pilih desil untuk keluarga ini (opsional)',
+    //     options: Array.from({ length: 10 }, (_, i) => ({
+    //         value: i + 1,
+    //         label: `Desil ${i + 1}`,
+    //     })),
+    // },
 ]);
 
 const handleSave = (data: Record<string, any>) => {
