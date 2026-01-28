@@ -23,6 +23,31 @@ class PengajuanProposalController extends Controller
     }
 
     /**
+     * Get informasi template proposal (untuk file pendukung) agar bisa digunakan di PWA.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getTemplateProposal()
+    {
+        try {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'url' => url('/template-proposal.docx'),
+                    'filename' => 'template-proposal.docx',
+                    'note' => 'Unduh template ini, isi sesuai kebutuhan, lalu upload kembali sebagai file pendukung proposal.',
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil informasi template proposal',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Get list kategori proposal
      * 
      * @return \Illuminate\Http\JsonResponse

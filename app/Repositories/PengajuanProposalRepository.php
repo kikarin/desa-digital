@@ -23,6 +23,7 @@ class PengajuanProposalRepository
     {
         $query = $this->model->select(
             'id',
+            'kategori_proposal_nama',
             'resident_id',
             'nama_kegiatan',
             'usulan_anggaran',
@@ -141,9 +142,14 @@ class PengajuanProposalRepository
 
     private function transformItem($item)
     {
+        $kategoriNama = $item->kategori_proposal_nama;
+        if (!$kategoriNama && $item->kategoriProposal) {
+            $kategoriNama = $item->kategoriProposal->nama;
+        }
+
         return [
             'id' => $item->id,
-            'kategori_proposal_nama' => $item->kategori_proposal_nama ?? '-',
+            'kategori_proposal_nama' => $kategoriNama ?? '-',
             'resident_id' => $item->resident_id,
             'resident_nama' => $item->resident->nama ?? '-',
             'resident_nik' => $item->resident->nik ?? '-',
@@ -186,9 +192,14 @@ class PengajuanProposalRepository
     public function customShow($data, $item = null)
     {
         if ($item) {
+            $kategoriNama = $item->kategori_proposal_nama;
+            if (!$kategoriNama && $item->kategoriProposal) {
+                $kategoriNama = $item->kategoriProposal->nama;
+            }
+
             $data['item'] = [
                 'id' => $item->id,
-                'kategori_proposal_nama' => $item->kategori_proposal_nama ?? '-',
+                'kategori_proposal_nama' => $kategoriNama ?? '-',
                 'resident_id' => $item->resident_id,
                 'resident_nama' => $item->resident->nama ?? '-',
                 'resident_nik' => $item->resident->nik ?? '-',

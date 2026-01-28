@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     
     // Pengajuan Proposal - Proposal Saya
     Route::get('/pengajuan-proposal/kategori', [PengajuanProposalController::class, 'getKategoriProposal']);
+    Route::get('/pengajuan-proposal/template', [PengajuanProposalController::class, 'getTemplateProposal']);
     Route::get('/pengajuan-proposal/{id}/export-pdf', [PengajuanProposalController::class, 'exportPdf']);
     Route::post('/pengajuan-proposal/{id}/update', [PengajuanProposalController::class, 'update']); 
     Route::get('/pengajuan-proposal', [PengajuanProposalController::class, 'index']);
