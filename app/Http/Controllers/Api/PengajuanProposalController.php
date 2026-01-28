@@ -196,7 +196,7 @@ class PengajuanProposalController extends Controller
 
             // Validasi input
             $validator = Validator::make($request->all(), [
-                'kategori_proposal_id' => 'required|exists:mst_kategori_proposal,id',
+                'kategori_proposal' => 'required|string|max:255',
                 'nomor_telepon_pengaju' => 'required|string|max:20',
                 'nama_kegiatan' => 'required|string|max:255',
                 'deskripsi_kegiatan' => 'required|string',
@@ -308,7 +308,7 @@ class PengajuanProposalController extends Controller
 
             // Validasi input
             $validator = Validator::make($request->all(), [
-                'kategori_proposal_id' => 'sometimes|required|exists:mst_kategori_proposal,id',
+                'kategori_proposal' => 'sometimes|required|string|max:255',
                 'nomor_telepon_pengaju' => 'sometimes|required|string|max:20',
                 'nama_kegiatan' => 'sometimes|required|string|max:255',
                 'deskripsi_kegiatan' => 'sometimes|required|string',

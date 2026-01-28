@@ -16,7 +16,7 @@ class PengajuanProposalRequest extends FormRequest
         $id = $this->route('id') ?? $this->route('pengajuan-proposal');
         
         $rules = [
-            'kategori_proposal_id' => 'required|exists:mst_kategori_proposal,id',
+            'kategori_proposal' => 'required|string|max:255',
             'resident_id' => 'required|exists:residents,id',
             'nomor_telepon_pengaju' => 'nullable|string|max:20',
             'nama_kegiatan' => 'required|string|max:255',

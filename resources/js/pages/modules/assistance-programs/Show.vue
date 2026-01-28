@@ -16,8 +16,8 @@ const props = defineProps<{
         tanggal_penyaluran?: string;
         jam_mulai_pengambilan?: string;
         jam_selesai_pengambilan?: string;
-        desil_min?: number;
-        desil_max?: number;
+        // desil_min?: number;
+        // desil_max?: number;
         keterangan: string | null;
         created_at: string;
         created_by_user: {
@@ -73,24 +73,24 @@ const getJadwalLabel = () => {
     return tanggal;
 };
 
-const getDesilLabel = () => {
-    if (!props.item.desil_min || !props.item.desil_max) {
-        return '-';
-    }
+// const getDesilLabel = () => {
+//     if (!props.item.desil_min || !props.item.desil_max) {
+//         return '-';
+//     }
     
-    if (props.item.desil_min === props.item.desil_max) {
-        return `Desil ${props.item.desil_min}`;
-    }
+//     if (props.item.desil_min === props.item.desil_max) {
+//         return `Desil ${props.item.desil_min}`;
+//     }
     
-    return `Desil ${props.item.desil_min} - ${props.item.desil_max}`;
-};
+//     return `Desil ${props.item.desil_min} - ${props.item.desil_max}`;
+// };
 
 const fields = [
     { label: 'Nama Program', value: props.item.nama_program },
     { label: 'Tahun', value: props.item.tahun.toString() },
     { label: 'Periode', value: props.item.periode || '-' },
     { label: 'Target Penerima', value: getTargetPenerimaLabel(props.item.target_penerima) },
-    { label: 'Desil Target', value: getDesilLabel() },
+    // { label: 'Desil Target', value: getDesilLabel() },
     { label: 'Status', value: getStatusLabel(props.item.status) },
     { label: 'Jadwal Penyaluran', value: getJadwalLabel() },
     { label: 'Keterangan', value: props.item.keterangan || '-' },

@@ -27,7 +27,7 @@ class RwsRepository
      */
     public function customIndex($data)
     {
-        $query = $this->model->select('id', 'nomor_rw', 'desa', 'kecamatan', 'kabupaten', 'boundary');
+        $query = $this->model->select('id', 'nomor_rw', 'desa', 'kecamatan', 'kabupaten', 'dusun', 'boundary');
 
         // Cari data berdasarkan keyword
         if (request('search')) {
@@ -36,7 +36,8 @@ class RwsRepository
                 $q->where('nomor_rw', 'like', '%' . $searchTerm . '%')
                     ->orWhere('desa', 'like', '%' . $searchTerm . '%')
                     ->orWhere('kecamatan', 'like', '%' . $searchTerm . '%')
-                    ->orWhere('kabupaten', 'like', '%' . $searchTerm . '%');
+                    ->orWhere('kabupaten', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('dusun', 'like', '%' . $searchTerm . '%');
             });
         }
 
@@ -48,6 +49,7 @@ class RwsRepository
                 'desa'      => 'desa',
                 'kecamatan' => 'kecamatan',
                 'kabupaten' => 'kabupaten',
+                'dusun'     => 'dusun',
             ];
 
             $sortColumn = $sortMapping[request('sort')] ?? 'id';
@@ -74,6 +76,7 @@ class RwsRepository
                     'desa'       => $rws->desa,
                     'kecamatan'  => $rws->kecamatan,
                     'kabupaten'  => $rws->kabupaten,
+                    'dusun'      => $rws->dusun,
                     'boundary'   => $rws->boundary,
                     'has_account' => $hasAccount,
                 ];
@@ -111,6 +114,7 @@ class RwsRepository
                 'desa'       => $rws->desa,
                 'kecamatan'  => $rws->kecamatan,
                 'kabupaten'  => $rws->kabupaten,
+                'dusun'      => $rws->dusun,
                 'has_account' => $hasAccount,
             ];
         });

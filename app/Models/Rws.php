@@ -23,6 +23,7 @@ class Rws extends Model
         'desa',
         'kecamatan',
         'kabupaten',
+        'dusun',
         'boundary',
     ];
 

@@ -16,40 +16,51 @@ class PengajuanSuratRepository
     public function __construct(PengajuanSurat $model)
     {
         $this->model = $model;
-        $this->with = ['jenisSurat', 'resident', 'adminVerifikasi', 'created_by_user', 'updated_by_user'];
+        $this->with = ['jenisSurat', 'resident', 'adminVerifikasi', 'rtVerifikasi', 'created_by_user', 'updated_by_user'];
     }
 
     public function customIndex($data)
     {
-        $query = $this->model->with(['jenisSurat', 'resident']);
+        $query = $this->model->with(['jenisSurat', 'resident', 'rtVerifikasi']);
+
+        // Filter by RT (for RT to see pengajuan from their RT residents)
+        $filterRtId = $data['filter_rt_id'] ?? request('filter_rt_id');
+        $hasRtFilter = false;
+        if ($filterRtId) {
+            $hasRtFilter = true;
+            $query->join('residents', 'pengajuan_surat.resident_id', '=', 'residents.id')
+                  ->join('families', 'residents.family_id', '=', 'families.id')
+                  ->join('houses', 'families.house_id', '=', 'houses.id')
+                  ->where('houses.rt_id', $filterRtId)
+                  ->select('pengajuan_surat.*');
+        }
 
         // Filter by created_by (for warga to see their own pengajuan)
-        // Check both request and data array
         $filterCreatedBy = $data['filter_created_by'] ?? request('filter_created_by');
         if ($filterCreatedBy) {
-            $query->where('created_by', $filterCreatedBy);
+            $query->where($hasRtFilter ? 'pengajuan_surat.created_by' : 'created_by', $filterCreatedBy);
         }
 
         // Filter by resident_id (for admin filtering)
         $filterResidentId = $data['filter_resident_id'] ?? request('filter_resident_id');
         if ($filterResidentId) {
-            $query->where('resident_id', $filterResidentId);
+            $query->where($hasRtFilter ? 'pengajuan_surat.resident_id' : 'resident_id', $filterResidentId);
         }
 
         // Filter by status
         if (request('filter_status')) {
-            $query->where('status', request('filter_status'));
+            $query->where($hasRtFilter ? 'pengajuan_surat.status' : 'status', request('filter_status'));
         }
 
         // Filter by jenis_surat_id
         if (request('filter_jenis_surat_id')) {
-            $query->where('jenis_surat_id', request('filter_jenis_surat_id'));
+            $query->where($hasRtFilter ? 'pengajuan_surat.jenis_surat_id' : 'jenis_surat_id', request('filter_jenis_surat_id'));
         }
 
         if (request('search')) {
             $searchTerm = request('search');
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('nomor_surat', 'like', '%' . $searchTerm . '%')
+            $query->where(function ($q) use ($searchTerm, $hasRtFilter) {
+                $q->where($hasRtFilter ? 'pengajuan_surat.nomor_surat' : 'nomor_surat', 'like', '%' . $searchTerm . '%')
                     ->orWhereHas('jenisSurat', function ($q) use ($searchTerm) {
                         $q->where('nama', 'like', '%' . $searchTerm . '%');
                     })
@@ -63,15 +74,15 @@ class PengajuanSuratRepository
         if (request('sort')) {
             $order = request('order', 'desc');
             $sortMapping = [
-                'tanggal_surat' => 'tanggal_surat',
-                'status' => 'status',
-                'nomor_surat' => 'nomor_surat',
+                'tanggal_surat' => $hasRtFilter ? 'pengajuan_surat.tanggal_surat' : 'tanggal_surat',
+                'status' => $hasRtFilter ? 'pengajuan_surat.status' : 'status',
+                'nomor_surat' => $hasRtFilter ? 'pengajuan_surat.nomor_surat' : 'nomor_surat',
             ];
 
-            $sortColumn = $sortMapping[request('sort')] ?? 'created_at';
+            $sortColumn = $sortMapping[request('sort')] ?? ($hasRtFilter ? 'pengajuan_surat.created_at' : 'created_at');
             $query->orderBy($sortColumn, $order);
         } else {
-            $query->orderBy('created_at', 'desc');
+            $query->orderBy($hasRtFilter ? 'pengajuan_surat.created_at' : 'created_at', 'desc');
         }
 
         $perPage = (int) request('per_page', 10);
@@ -135,6 +146,13 @@ class PengajuanSuratRepository
             'tanggal_disetujui' => $item->tanggal_disetujui ? Carbon::parse($item->tanggal_disetujui)->timezone('Asia/Jakarta')->format('Y-m-d') : null,
             'alasan_penolakan' => $item->alasan_penolakan,
             'admin_verifikasi_id' => $item->admin_verifikasi_id,
+            'rt_verifikasi_id' => $item->rt_verifikasi_id,
+            'rt_verifikasi_at' => $item->rt_verifikasi_at ? Carbon::parse($item->rt_verifikasi_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+            'rt_catatan' => $item->rt_catatan,
+            'rt_verifikasi' => $item->rtVerifikasi ? [
+                'id' => $item->rtVerifikasi->id,
+                'name' => $item->rtVerifikasi->name,
+            ] : null,
             'tanda_tangan_digital' => $item->tanda_tangan_digital,
             'foto_tanda_tangan' => $item->foto_tanda_tangan,
             'tanda_tangan_type' => $item->tanda_tangan_type,

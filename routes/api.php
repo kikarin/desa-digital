@@ -62,6 +62,11 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     Route::get('/pengajuan-surat/{id}/export-pdf', [PengajuanSuratController::class, 'exportPdf']);
     Route::post('/pengajuan-surat/{id}/update', [PengajuanSuratController::class, 'update']); // POST untuk update dengan file
     Route::apiResource('pengajuan-surat', PengajuanSuratController::class);
+
+    // Pengajuan Surat - Verifikasi RT (PWA, khusus role RT)
+    Route::get('/pengajuan-surat-rt', [PengajuanSuratController::class, 'indexRtPwa']);
+    Route::get('/pengajuan-surat-rt/{id}', [PengajuanSuratController::class, 'showRtPwa']);
+    Route::post('/pengajuan-surat-rt/{id}/verifikasi', [PengajuanSuratController::class, 'verifyRtPwa']);
     
     // Pengajuan Proposal - Proposal Saya
     Route::get('/pengajuan-proposal/kategori', [PengajuanProposalController::class, 'getKategoriProposal']);

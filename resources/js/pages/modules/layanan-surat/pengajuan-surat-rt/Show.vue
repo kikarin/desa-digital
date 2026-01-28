@@ -4,13 +4,6 @@ import PageShow from '@/pages/modules/base-page/PageShow.vue';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card/index';
 import { Button } from '@/components/ui/button';
 import { router } from '@inertiajs/vue3';
-import { computed } from 'vue';
-
-const isDisetujui = computed(() => {
-    const status = props.item?.status;
-    if (!status) return false;
-    return status === 'disetujui' || String(status).toLowerCase() === 'disetujui';
-});
 
 const { toast } = useToast();
 
@@ -19,14 +12,10 @@ const props = defineProps<{
         id: number;
         jenis_surat_id: number;
         jenis_surat_nama: string;
-        resident_id: number;
         resident_nama: string;
         resident_nik: string;
         tanggal_surat: string;
         status: string;
-        nomor_surat: string | null;
-        tanggal_disetujui: string | null;
-        alasan_penolakan: string | null;
         rt_verifikasi_id: number | null;
         rt_verifikasi_at: string | null;
         rt_catatan: string | null;
@@ -34,17 +23,8 @@ const props = defineProps<{
             id: number;
             name: string;
         } | null;
-        can_be_edited: boolean;
         created_at: string;
-        created_by_user: {
-            id: number;
-            name: string;
-        } | null;
         updated_at: string;
-        updated_by_user: {
-            id: number;
-            name: string;
-        } | null;
     };
     atribut_detail?: Array<{
         id: number;
@@ -53,16 +33,20 @@ const props = defineProps<{
         nilai: string;
         lampiran_files: string[];
     }>;
+    can?: {
+        Verifikasi?: boolean;
+    };
 }>();
 
 const breadcrumbs = [
     { title: 'Layanan Surat', href: '#' },
-    { title: 'Pengajuan Saya', href: '/layanan-surat/pengajuan-saya' },
-    { title: 'Detail Pengajuan', href: `/layanan-surat/pengajuan-saya/${props.item.id}` },
+    { title: 'Verifikasi Pengajuan Surat RT', href: '/layanan-surat/pengajuan-surat-rt' },
+    { title: 'Detail Pengajuan', href: `/layanan-surat/pengajuan-surat-rt/${props.item.id}` },
 ];
 
 const fields = [
     { label: 'Jenis Surat', value: props.item.jenis_surat_nama || '-' },
+    { label: 'Warga', value: props.item.resident_nama && props.item.resident_nik ? `${props.item.resident_nama} (${props.item.resident_nik})` : '-' },
     { label: 'Tanggal Surat', value: props.item.tanggal_surat ? new Date(props.item.tanggal_surat).toLocaleDateString('id-ID') : '-' },
     { label: 'Status', value: getStatusLabel(props.item.status) },
 ];
@@ -82,17 +66,10 @@ if (props.item.rt_catatan) {
     fields.push({ label: 'Catatan RT', value: props.item.rt_catatan });
 }
 
-if (props.item.nomor_surat) {
-    fields.push({ label: 'Nomor Surat', value: props.item.nomor_surat });
-}
-
-if (props.item.tanggal_disetujui) {
-    fields.push({ label: 'Tanggal Disetujui', value: new Date(props.item.tanggal_disetujui).toLocaleDateString('id-ID') });
-}
-
-if (props.item.alasan_penolakan) {
-    fields.push({ label: 'Alasan Penolakan', value: props.item.alasan_penolakan });
-}
+const actionFields = [
+    { label: 'Created At', value: props.item.created_at ? new Date(props.item.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' },
+    { label: 'Updated At', value: props.item.updated_at ? new Date(props.item.updated_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' },
+];
 
 function getStatusLabel(status: string): string {
     const statusMap: Record<string, string> = {
@@ -105,62 +82,28 @@ function getStatusLabel(status: string): string {
     return statusMap[status] || status.toUpperCase();
 }
 
-const actionFields = [
-    { label: 'Created At', value: props.item.created_at ? new Date(props.item.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' },
-    { label: 'Created By', value: props.item.created_by_user?.name || '-' },
-    { label: 'Updated At', value: props.item.updated_at ? new Date(props.item.updated_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' },
-    { label: 'Updated By', value: props.item.updated_by_user?.name || '-' },
-];
-
-const handleEdit = () => {
-    if (props.item.can_be_edited) {
-        router.visit(`/layanan-surat/pengajuan-saya/${props.item.id}/edit`);
-    }
-};
-
-const handleExportPdf = () => {
-    if (props.item.status === 'disetujui') {
-        window.location.href = `/layanan-surat/pengajuan-surat/${props.item.id}/export-pdf`;
-    }
-};
-
-const handlePreviewPdf = () => {
-    if (props.item.status === 'disetujui') {
-        window.open(`/layanan-surat/pengajuan-surat/${props.item.id}/preview-pdf`, '_blank');
+const handleVerifikasi = () => {
+    if (props.item.status === 'menunggu' && props.can?.Verifikasi) {
+        router.visit(`/layanan-surat/pengajuan-surat-rt/${props.item.id}/verifikasi`);
     }
 };
 </script>
 
 <template>
     <PageShow
-        title="Pengajuan Saya"
+        title="Detail Pengajuan Surat RT"
         :breadcrumbs="breadcrumbs"
         :fields="fields"
         :action-fields="actionFields"
-        :back-url="'/layanan-surat/pengajuan-saya'"
+        :back-url="'/layanan-surat/pengajuan-surat-rt'"
     >
         <template #custom-action>
             <Button
-                v-if="isDisetujui"
-                @click="handlePreviewPdf"
-                variant="secondary"
+                v-if="item.status === 'menunggu' && can?.Verifikasi"
+                @click="handleVerifikasi"
             >
-                Preview PDF
+                Verifikasi
             </Button>
-            <Button
-                v-if="isDisetujui"
-                @click="handleExportPdf"
-                variant="secondary"
-            >
-                Export PDF
-            </Button>
-                <Button
-                    v-if="item.can_be_edited"
-                    @click="handleEdit"
-                    variant="destructive"
-                >
-                    Edit Pengajuan
-                </Button>
         </template>
 
         <template #additional-content>
@@ -185,15 +128,15 @@ const handlePreviewPdf = () => {
                                 </div>
                                 <div v-if="atribut.lampiran_files && atribut.lampiran_files.length > 0" class="mt-2">
                                     <strong>Lampiran:</strong>
-                                    <div class="mt-1 space-y-1">
+                                    <div class="flex flex-wrap gap-2 mt-1">
                                         <a
                                             v-for="(file, index) in atribut.lampiran_files"
                                             :key="index"
-                                            :href="`/storage/${file}`"
+                                            :href="file.path"
                                             target="_blank"
-                                            class="block text-primary hover:underline"
+                                            class="text-sm text-blue-600 hover:underline"
                                         >
-                                            File {{ index + 1 }}
+                                            {{ file.name }}
                                         </a>
                                     </div>
                                 </div>
@@ -202,8 +145,6 @@ const handlePreviewPdf = () => {
                     </CardContent>
                 </Card>
             </div>
-
         </template>
     </PageShow>
 </template>
-

@@ -21,6 +21,7 @@ const breadcrumbs = [
 
 const columns = [
     { key: 'nomor_rw', label: 'Nomor RW', searchable: true, orderable: true, visible: true },
+    { key: 'dusun', label: 'Dusun', searchable: true, orderable: true, visible: true },
     { key: 'desa', label: 'Desa', searchable: true, orderable: true, visible: true },
     { key: 'kecamatan', label: 'Kecamatan', searchable: true, orderable: true, visible: true },
     { key: 'kabupaten', label: 'Kabupaten', searchable: true, orderable: true, visible: true },

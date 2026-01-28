@@ -17,6 +17,7 @@ class AuthController extends Controller
 {
     protected $usersRoleRepository;
     protected $roleWargaId = 37; // Role ID untuk Warga/Resident
+    protected $allowedPwaRoleIds = [37, 36, 35]; 
 
     public function __construct(UsersRoleRepository $usersRoleRepository)
     {
@@ -172,16 +173,15 @@ class AuthController extends Controller
                 ], 403);
             }
 
-            // Cek apakah user memiliki role Warga (37)
-            $hasWargaRole = $user->users_role()
-                ->where('role_id', $this->roleWargaId)
+            $hasAllowedRole = $user->users_role()
+                ->whereIn('role_id', $this->allowedPwaRoleIds)
                 ->exists();
 
-            if (!$hasWargaRole) {
+            if (!$hasAllowedRole) {
                 Auth::logout();
                 return response()->json([
                     'success' => false,
-                    'message' => 'Akun ini tidak memiliki akses sebagai warga.',
+                    'message' => 'Akun ini tidak memiliki akses ke aplikasi PWA.',
                 ], 403);
             }
 

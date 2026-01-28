@@ -42,7 +42,7 @@ const props = defineProps<{
             name: string;
         } | null;
     };
-    fields: Array<{ label: string; value: string; desil?: number }>;
+    fields: Array<{ label: string; value: string }>;
     actionFields: Array<{ label: string; value: string }>;
     residents?: Array<{
         id: number;
@@ -135,39 +135,33 @@ const isCashItem = (tipe: string): boolean => {
     return tipe === 'UANG' || tipe === 'UANG_TUNAI' || tipe?.toUpperCase().includes('UANG');
 };
 
-// Helper function untuk format desil dengan warna
-const formatDesil = (desil: number | null | undefined): string => {
-    if (!desil) return '-';
+// // Helper function untuk format desil dengan warna
+// const formatDesil = (desil: number | null | undefined): string => {
+//     if (!desil) return '-';
     
-    const desilConfig: Record<number, { label: string; bgColor: string; textColor: string }> = {
-        1: { label: 'Desil 1 - Sangat Miskin', bgColor: 'bg-red-100', textColor: 'text-red-800' },
-        2: { label: 'Desil 2 - Miskin', bgColor: 'bg-orange-100', textColor: 'text-orange-800' },
-        3: { label: 'Desil 3 - Hampir Miskin', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800' },
-        4: { label: 'Desil 4 - Rentan Miskin', bgColor: 'bg-lime-100', textColor: 'text-lime-800' },
-        5: { label: 'Desil 5 - Pas-pasan', bgColor: 'bg-green-100', textColor: 'text-green-800' },
-        6: { label: 'Desil 6 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
-        7: { label: 'Desil 7 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
-        8: { label: 'Desil 8 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
-        9: { label: 'Desil 9 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
-        10: { label: 'Desil 10 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
-    };
+//     const desilConfig: Record<number, { label: string; bgColor: string; textColor: string }> = {
+//         1: { label: 'Desil 1 - Sangat Miskin', bgColor: 'bg-red-100', textColor: 'text-red-800' },
+//         2: { label: 'Desil 2 - Miskin', bgColor: 'bg-orange-100', textColor: 'text-orange-800' },
+//         3: { label: 'Desil 3 - Hampir Miskin', bgColor: 'bg-yellow-100', textColor: 'text-yellow-800' },
+//         4: { label: 'Desil 4 - Rentan Miskin', bgColor: 'bg-lime-100', textColor: 'text-lime-800' },
+//         5: { label: 'Desil 5 - Pas-pasan', bgColor: 'bg-green-100', textColor: 'text-green-800' },
+//         6: { label: 'Desil 6 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
+//         7: { label: 'Desil 7 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
+//         8: { label: 'Desil 8 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
+//         9: { label: 'Desil 9 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
+//         10: { label: 'Desil 10 - Menengah ke Atas', bgColor: 'bg-emerald-100', textColor: 'text-emerald-800' },
+//     };
     
-    const config = desilConfig[desil];
-    if (!config) return `Desil ${desil}`;
+//     const config = desilConfig[desil];
+//     if (!config) return `Desil ${desil}`;
     
-    return `<span class="px-2 py-1 text-xs font-semibold ${config.textColor} ${config.bgColor} rounded-full">${config.label}</span>`;
-};
+//     return `<span class="px-2 py-1 text-xs font-semibold ${config.textColor} ${config.bgColor} rounded-full">${config.label}</span>`;
+// };
 
 // Computed untuk format fields dengan desil
 const formattedFields = computed(() => {
     return props.fields.map(field => {
-        if (field.label === 'Desil' && field.desil !== undefined) {
-            return {
-                ...field,
-                value: formatDesil(field.desil),
-                className: 'desil-field'
-            };
-        }
+        
         return field;
     });
 });

@@ -153,6 +153,13 @@ class UsersMenuSeeder extends Seeder
                         'urutan'        => 4,
                         'permission_id' => 'Pengajuan Saya Show',
                     ],
+                    [
+                        'nama'          => 'Verifikasi Pengajuan Surat RT',
+                        'kode'          => 'LAYANAN-SURAT-PENGAJUAN-SURAT-RT',
+                        'url'           => '/layanan-surat/pengajuan-surat-rt',
+                        'urutan'        => 5,
+                        'permission_id' => 'Pengajuan Surat RT Verifikasi',
+                    ],
                 ],
             ],
             [

@@ -212,6 +212,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/layanan-surat/pengajuan-surat/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan-surat.update');
     Route::get('/api/pengajuan-surat', [PengajuanSuratController::class, 'apiIndex']);
     Route::get('/api/pengajuan-saya', [PengajuanSuratController::class, 'apiIndexPengajuanSaya']);
+    Route::get('/api/pengajuan-surat-rt', [PengajuanSuratController::class, 'apiIndexRt']);
     Route::get('/layanan-surat/pengajuan-surat/{id}/verifikasi', [PengajuanSuratController::class, 'verifikasi'])->name('pengajuan-surat.verifikasi');
     Route::post('/layanan-surat/pengajuan-surat/{id}/verifikasi', [PengajuanSuratController::class, 'storeVerifikasi'])->name('pengajuan-surat.store-verifikasi');
     Route::get('/layanan-surat/pengajuan-surat/{id}/preview-pdf', [PengajuanSuratController::class, 'previewPdf'])->name('pengajuan-surat.preview-pdf');
@@ -226,6 +227,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/layanan-surat/pengajuan-saya/{id}/edit', [PengajuanSuratController::class, 'editPengajuanSaya'])->name('pengajuan-saya.edit');
     Route::put('/layanan-surat/pengajuan-saya/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan-saya.update');
     Route::post('/layanan-surat/pengajuan-saya/{id}', [PengajuanSuratController::class, 'update'])->name('pengajuan-saya.update-post'); // For method spoofing
+
+    // Verifikasi RT (untuk RT)
+    Route::get('/layanan-surat/pengajuan-surat-rt', [PengajuanSuratController::class, 'indexRt'])->name('pengajuan-surat-rt.index');
+    Route::get('/layanan-surat/pengajuan-surat-rt/{id}', [PengajuanSuratController::class, 'showRt'])->name('pengajuan-surat-rt.show');
+    Route::get('/layanan-surat/pengajuan-surat-rt/{id}/verifikasi', [PengajuanSuratController::class, 'verifikasiRt'])->name('pengajuan-surat-rt.verifikasi');
+    Route::post('/layanan-surat/pengajuan-surat-rt/{id}/verifikasi', [PengajuanSuratController::class, 'storeVerifikasiRt'])->name('pengajuan-surat-rt.store-verifikasi');
 
     // Admin Tanda Tangan Routes
     Route::get('/api/admin-tanda-tangan', [AdminTandaTanganController::class, 'index'])->name('admin-tanda-tangan.index');

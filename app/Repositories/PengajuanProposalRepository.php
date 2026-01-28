@@ -23,7 +23,6 @@ class PengajuanProposalRepository
     {
         $query = $this->model->select(
             'id',
-            'kategori_proposal_id',
             'resident_id',
             'nama_kegiatan',
             'usulan_anggaran',
@@ -144,8 +143,7 @@ class PengajuanProposalRepository
     {
         return [
             'id' => $item->id,
-            'kategori_proposal_id' => $item->kategori_proposal_id,
-            'kategori_proposal_nama' => $item->kategoriProposal->nama ?? '-',
+            'kategori_proposal_nama' => $item->kategori_proposal_nama ?? '-',
             'resident_id' => $item->resident_id,
             'resident_nama' => $item->resident->nama ?? '-',
             'resident_nik' => $item->resident->nik ?? '-',
@@ -166,7 +164,7 @@ class PengajuanProposalRepository
         if ($item) {
             $data['item'] = [
                 'id' => $item->id,
-                'kategori_proposal_id' => $item->kategori_proposal_id,
+                'kategori_proposal_nama' => $item->kategori_proposal_nama ?? null,
                 'resident_id' => $item->resident_id,
                 'nomor_telepon_pengaju' => $item->nomor_telepon_pengaju,
                 'nama_kegiatan' => $item->nama_kegiatan,
@@ -190,8 +188,7 @@ class PengajuanProposalRepository
         if ($item) {
             $data['item'] = [
                 'id' => $item->id,
-                'kategori_proposal_id' => $item->kategori_proposal_id,
-                'kategori_proposal_nama' => $item->kategoriProposal->nama ?? '-',
+                'kategori_proposal_nama' => $item->kategori_proposal_nama ?? '-',
                 'resident_id' => $item->resident_id,
                 'resident_nama' => $item->resident->nama ?? '-',
                 'resident_nik' => $item->resident->nik ?? '-',
@@ -229,6 +226,11 @@ class PengajuanProposalRepository
 
     public function customDataCreateUpdate($data, $record = null)
     {
+        if (isset($data['kategori_proposal'])) {
+            $data['kategori_proposal_nama'] = $data['kategori_proposal'];
+            unset($data['kategori_proposal']);
+        }
+
         // Set status default jika create
         if (!$record) {
             $data['status'] = 'menunggu_verifikasi';

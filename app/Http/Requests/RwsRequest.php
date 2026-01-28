@@ -24,6 +24,7 @@ class RwsRequest extends FormRequest
             'desa'      => 'required|string|max:100',
             'kecamatan' => 'required|string|max:100',
             'kabupaten' => 'required|string|max:100',
+            'dusun'     => 'nullable|in:Dusun 1,Dusun 2',
         ];
 
         // Kalau update, wajib ada id

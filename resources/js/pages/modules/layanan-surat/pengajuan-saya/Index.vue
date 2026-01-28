@@ -25,9 +25,11 @@ const columns = [
             } else if (row.status === 'ditolak') {
                 return '<span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-200">DITOLAK</span>';
             } else if (row.status === 'diperbaiki') {
-                return '<span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">DIPERBAIKI</span>';
+                return '<span class="px-2 py-1 text-xs font-semibold text-orange-800 bg-orange-100 rounded-full dark:bg-orange-900 dark:text-orange-200">DIPERBAIKI</span>';
+            } else if (row.status === 'diverifikasi_rt') {
+                return '<span class="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200">SUDAH DIVERIFIKASI RT</span>';
             } else {
-                return '<span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">MENUNGGU</span>';
+                return '<span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">MENUNGGU VERIFIKASI RT</span>';
             }
         },
     },

@@ -9,6 +9,7 @@ const props = defineProps<{
     item: {
         id: number;
         nomor_rw: string;
+        dusun: string | null;
         desa: string;
         kecamatan: string;
         kabupaten: string;
@@ -39,6 +40,7 @@ const breadcrumbs = [
 
 const fields = [
     { label: 'Nomor RW', value: props.item.nomor_rw },
+    { label: 'Dusun', value: props.item.dusun || '-' },
     { label: 'Desa', value: props.item.desa },
     { label: 'Kecamatan', value: props.item.kecamatan },
     { label: 'Kabupaten', value: props.item.kabupaten },

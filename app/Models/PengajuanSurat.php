@@ -27,6 +27,9 @@ class PengajuanSurat extends Model
         'tanggal_disetujui',
         'alasan_penolakan',
         'admin_verifikasi_id',
+        'rt_verifikasi_id',
+        'rt_verifikasi_at',
+        'rt_catatan',
         'tanda_tangan_digital',
         'foto_tanda_tangan',
         'tanda_tangan_type',
@@ -35,6 +38,7 @@ class PengajuanSurat extends Model
     protected $casts = [
         'tanggal_surat' => 'date',
         'tanggal_disetujui' => 'date',
+        'rt_verifikasi_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -58,6 +62,11 @@ class PengajuanSurat extends Model
     public function adminVerifikasi()
     {
         return $this->belongsTo(User::class, 'admin_verifikasi_id');
+    }
+
+    public function rtVerifikasi()
+    {
+        return $this->belongsTo(User::class, 'rt_verifikasi_id');
     }
 
     public function atribut()

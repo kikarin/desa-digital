@@ -7,9 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import axios from 'axios';
-import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue';
+import { ref, computed } from 'vue';
 import type { BreadcrumbItem } from '@/types';
 
 const { toast } = useToast();
@@ -29,26 +27,28 @@ const props = defineProps<{
         atribut_nama: string;
         atribut_tipe: string;
         nilai: string;
-        lampiran_files: string[];
+        lampiran_files: Array<string | { path?: string; name?: string }>;
     }>;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Layanan Surat', href: '#' },
-    { title: 'Pengajuan Surat', href: '/layanan-surat/pengajuan-surat' },
+    { title: 'Verifikasi Pengajuan Surat RT', href: '/layanan-surat/pengajuan-surat-rt' },
     { title: 'Verifikasi', href: '#' },
 ];
 
-const status = ref<'disetujui' | 'ditolak' | null>(null);
-const alasanPenolakan = ref('');
+const status = ref<'diverifikasi_rt' | 'ditolak' | null>(null);
+const rtCatatan = ref('');
 
 const canSubmit = computed(() => {
     if (!status.value) return false;
     if (status.value === 'ditolak') {
-        return alasanPenolakan.value.length >= 10;
+        return rtCatatan.value.length >= 10; // Minimal 10 karakter untuk alasan penolakan
     }
-    // Jika disetujui, tidak ada lagi kewajiban tanda tangan.
-    return status.value === 'disetujui';
+    if (status.value === 'diverifikasi_rt') {
+        return true; // Catatan opsional jika disetujui
+    }
+    return false;
 });
 
 const handleSubmit = async () => {
@@ -60,38 +60,36 @@ const handleSubmit = async () => {
         return;
     }
 
-    try {
-        const formData = new FormData();
-        formData.append('id', String(props.item.id));
-        formData.append('status', status.value!);
+    const formData = new FormData();
+    formData.append('id', String(props.item.id));
+    formData.append('status', status.value!);
+    formData.append('rt_catatan', rtCatatan.value || '');
 
-        if (status.value === 'ditolak') {
-            formData.append('alasan_penolakan', alasanPenolakan.value);
-        }
-
-        const response = await axios.post(`/layanan-surat/pengajuan-surat/${props.item.id}/verifikasi`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
+    router.post(
+        `/layanan-surat/pengajuan-surat-rt/${props.item.id}/verifikasi`,
+        formData,
+        {
+            onSuccess: () => {
+                toast({
+                    title: 'Pengajuan surat berhasil diverifikasi',
+                    variant: 'success',
+                });
+                router.visit('/layanan-surat/pengajuan-surat-rt');
             },
-        });
-
-        toast({
-            title: 'Pengajuan surat berhasil diverifikasi',
-            variant: 'success',
-        });
-
-        router.visit(`/layanan-surat/pengajuan-surat/${props.item.id}`);
-    } catch (error: any) {
-        toast({
-            title: error.response?.data?.message || 'Gagal memverifikasi pengajuan surat',
-            variant: 'destructive',
-        });
-    }
+            onError: (errors: any) => {
+                const errorMessage = errors.message || errors.rt_catatan?.[0] || 'Gagal memverifikasi pengajuan surat';
+                toast({
+                    title: errorMessage,
+                    variant: 'destructive',
+                });
+            },
+        }
+    );
 };
 </script>
 
 <template>
-    <Head title="Verifikasi Pengajuan Surat" />
+    <Head title="Verifikasi Pengajuan Surat RT" />
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="space-y-6 p-4">
             <!-- Info Pengajuan -->
@@ -138,11 +136,11 @@ const handleSubmit = async () => {
                                     <a
                                         v-for="(file, index) in atribut.lampiran_files"
                                         :key="index"
-                                        :href="`/storage/${file}`"
+                                        :href="typeof file === 'string' ? `/storage/${file}` : `/storage/${file.path || file}`"
                                         target="_blank"
                                         class="block text-primary hover:underline text-sm"
                                     >
-                                        {{ file.split('/').pop() }}
+                                        {{ typeof file === 'string' ? file.split('/').pop() : (file.name || file.split('/').pop()) }}
                                     </a>
                                 </div>
                             </div>
@@ -161,10 +159,10 @@ const handleSubmit = async () => {
                         <!-- Status -->
                         <div>
                             <Label>Status Verifikasi <span class="text-red-500">*</span></Label>
-                            <RadioGroup :model-value="status ?? undefined" @update:model-value="(val: string) => status = val as 'disetujui' | 'ditolak' | null" class="mt-2">
+                            <RadioGroup :model-value="status ?? undefined" @update:model-value="(val: string) => status = val as 'diverifikasi_rt' | 'ditolak' | null" class="mt-2">
                                 <div class="flex items-center space-x-2">
-                                    <RadioGroupItem value="disetujui" id="disetujui" />
-                                    <Label for="disetujui" class="cursor-pointer">Setujui</Label>
+                                    <RadioGroupItem value="diverifikasi_rt" id="diverifikasi_rt" />
+                                    <Label for="diverifikasi_rt" class="cursor-pointer">Setujui (Diverifikasi RT)</Label>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <RadioGroupItem value="ditolak" id="ditolak" />
@@ -173,22 +171,25 @@ const handleSubmit = async () => {
                             </RadioGroup>
                         </div>
 
-                        <!-- Alasan Penolakan (jika ditolak) -->
-                        <div v-if="status === 'ditolak'">
-                            <Label for="alasan_penolakan">Alasan Penolakan <span class="text-red-500">*</span></Label>
+                        <!-- Catatan -->
+                        <div>
+                            <Label for="rt_catatan">Catatan <span v-if="status === 'ditolak'" class="text-red-500">*</span></Label>
                             <Textarea
-                                id="alasan_penolakan"
-                                v-model="alasanPenolakan"
-                                placeholder="Masukkan alasan penolakan (minimal 10 karakter)"
+                                id="rt_catatan"
+                                v-model="rtCatatan"
+                                placeholder="Masukkan catatan verifikasi (wajib jika ditolak)"
                                 :rows="4"
-                                required
                                 class="mt-2"
                             />
+                            <p class="text-xs text-muted-foreground mt-1">
+                                <span v-if="status === 'ditolak'">Catatan wajib diisi minimal 10 karakter</span>
+                                <span v-else>Catatan opsional</span>
+                            </p>
                         </div>
 
                         <!-- Submit Button -->
                         <div class="flex justify-end space-x-2">
-                            <Button type="button" variant="outline" @click="router.visit(`/layanan-surat/pengajuan-surat/${item.id}`)">
+                            <Button type="button" variant="outline" @click="router.visit('/layanan-surat/pengajuan-surat-rt')">
                                 Batal
                             </Button>
                             <Button type="submit" :disabled="!canSubmit">
@@ -201,4 +202,3 @@ const handleSubmit = async () => {
         </div>
     </AppLayout>
 </template>
-

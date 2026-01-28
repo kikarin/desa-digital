@@ -44,6 +44,17 @@ const formInputs = [
         placeholder: 'Contoh: Bogor',
         required: true,
     },
+    {
+        name: 'dusun',
+        label: 'Dusun',
+        type: 'select' as const,
+        placeholder: 'Pilih Dusun',
+        required: false,
+        options: [
+            { value: 'Dusun 1', label: 'Dusun 1' },
+            { value: 'Dusun 2', label: 'Dusun 2' },
+        ],
+    },
 ];
 
 // Handle save form

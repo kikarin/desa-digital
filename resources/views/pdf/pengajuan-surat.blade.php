@@ -94,6 +94,7 @@
             max-height: 100px;
         }
         .ttd-name {
+            margin-top: 80px;
             font-weight: bold;
         }
         .ttd-role {

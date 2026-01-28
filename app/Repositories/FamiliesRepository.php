@@ -191,30 +191,11 @@ class FamiliesRepository
             $kepalaKeluargaInfo = $kepalaKeluarga->nik . ' - ' . $kepalaKeluarga->nama;
         }
 
-        // Helper untuk format desil
-        $desilLabel = '-';
-        $desilValue = $item->desil;
-        if ($desilValue) {
-            $desilLabels = [
-                1 => 'Desil 1 - Sangat Miskin',
-                2 => 'Desil 2 - Miskin',
-                3 => 'Desil 3 - Hampir Miskin',
-                4 => 'Desil 4 - Rentan Miskin',
-                5 => 'Desil 5 - Pas-pasan',
-                6 => 'Desil 6 - Menengah ke Atas',
-                7 => 'Desil 7 - Menengah ke Atas',
-                8 => 'Desil 8 - Menengah ke Atas',
-                9 => 'Desil 9 - Menengah ke Atas',
-                10 => 'Desil 10 - Menengah ke Atas',
-            ];
-            $desilLabel = $desilLabels[$desilValue] ?? "Desil {$desilValue}";
-        }
 
         $fields = [
             ['label' => 'No. KK', 'value' => $item->no_kk ?? '-'],
             ['label' => 'Rumah', 'value' =>'NO '. ($item->house-> nomor_rumah ?? '-') . ' - RT ' . ($item->house->rt->nomor_rt ?? '') . ' - RW ' . ($item->house->rt->rw->nomor_rw ?? '') . ' - ' . ($item->house->rt->rw->desa ?? '')],
             ['label' => 'Status', 'value' => $item->status ?? '-'],
-            ['label' => 'Desil', 'value' => $desilLabel, 'desil' => $desilValue], // Tambahkan desil value untuk styling
             ['label' => 'Kepala Keluarga', 'value' => $kepalaKeluargaInfo],
         ];
 

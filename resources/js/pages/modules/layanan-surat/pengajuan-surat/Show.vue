@@ -29,6 +29,13 @@ const props = defineProps<{
         tanggal_disetujui: string | null;
         alasan_penolakan: string | null;
         admin_verifikasi_id: number | null;
+        rt_verifikasi_id: number | null;
+        rt_verifikasi_at: string | null;
+        rt_catatan: string | null;
+        rt_verifikasi: {
+            id: number;
+            name: string;
+        } | null;
         tanda_tangan_digital: string | null;
         foto_tanda_tangan: string | null;
         tanda_tangan_type: string | null;
@@ -67,8 +74,23 @@ const fields = [
     { label: 'Jenis Surat', value: props.item.jenis_surat_nama || '-' },
     { label: 'Warga', value: props.item.resident_nama && props.item.resident_nik ? `${props.item.resident_nama} (${props.item.resident_nik})` : '-' },
     { label: 'Tanggal Surat', value: props.item.tanggal_surat ? new Date(props.item.tanggal_surat).toLocaleDateString('id-ID') : '-' },
-    { label: 'Status', value: props.item.status ? props.item.status.toUpperCase() : '-' },
+    { label: 'Status', value: getStatusLabel(props.item.status) },
 ];
+
+if (props.item.rt_verifikasi_at) {
+    fields.push({ 
+        label: 'Diverifikasi RT Pada', 
+        value: props.item.rt_verifikasi_at ? new Date(props.item.rt_verifikasi_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' 
+    });
+}
+
+if (props.item.rt_verifikasi) {
+    fields.push({ label: 'Diverifikasi Oleh RT', value: props.item.rt_verifikasi.name });
+}
+
+if (props.item.rt_catatan) {
+    fields.push({ label: 'Catatan RT', value: props.item.rt_catatan });
+}
 
 if (props.item.nomor_surat) {
     fields.push({ label: 'Nomor Surat', value: props.item.nomor_surat });
@@ -80,6 +102,17 @@ if (props.item.tanggal_disetujui) {
 
 if (props.item.alasan_penolakan) {
     fields.push({ label: 'Alasan Penolakan', value: props.item.alasan_penolakan });
+}
+
+function getStatusLabel(status: string): string {
+    const statusMap: Record<string, string> = {
+        menunggu: 'Menunggu Verifikasi RT',
+        diverifikasi_rt: 'Sudah Diverifikasi RT',
+        disetujui: 'Disetujui',
+        ditolak: 'Ditolak',
+        diperbaiki: 'Diperbaiki',
+    };
+    return statusMap[status] || status.toUpperCase();
 }
 
 const actionFields = [
@@ -167,27 +200,13 @@ const handleExportPdf = () => {
                 </Card>
             </div>
 
-            <!-- Tanda Tangan -->
-            <div v-if="item.status === 'disetujui' && (item.tanda_tangan_digital || item.foto_tanda_tangan)" class="mt-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Tanda Tangan</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div v-if="item.tanda_tangan_type === 'digital' && item.tanda_tangan_digital">
-                            <img :src="item.tanda_tangan_digital" alt="Tanda Tangan Digital" class="max-w-xs border rounded" />
-                        </div>
-                        <div v-else-if="item.tanda_tangan_type === 'foto' && item.foto_tanda_tangan">
-                            <img :src="`/storage/${item.foto_tanda_tangan}`" alt="Foto Tanda Tangan" class="max-w-xs border rounded" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            <!-- Tanda Tangan Admin tidak lagi ditampilkan di halaman detail.
+                 PDF hanya menampilkan nama pejabat tanpa gambar tanda tangan. -->
 
             <!-- Action Buttons -->
             <div class="mt-6 flex gap-2 flex-wrap">
                 <Button
-                    v-if="(item.status === 'menunggu' || item.status === 'diperbaiki') && can?.Verifikasi"
+                    v-if="item.status === 'diverifikasi_rt' && can?.Verifikasi"
                     @click="handleVerifikasi"
                 >
                     Verifikasi

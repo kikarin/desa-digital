@@ -45,7 +45,7 @@ const getInitialAnggaran = () => {
 };
 
 const formData = ref({
-    kategori_proposal_id: props.initialData?.kategori_proposal_id ? String(props.initialData.kategori_proposal_id) : '',
+    kategori_proposal: props.initialData?.kategori_proposal || '',
     resident_id: props.initialData?.resident_id ? String(props.initialData.resident_id) : '',
     nomor_telepon_pengaju: props.initialData?.nomor_telepon_pengaju || '',
     nama_kegiatan: props.initialData?.nama_kegiatan || '',
@@ -324,7 +324,7 @@ const removeThumbnail = () => {
 
 // Validation
 const canSubmit = computed(() => {
-    if (!formData.value.kategori_proposal_id) return false;
+    if (!formData.value.kategori_proposal.trim()) return false;
     if (!formData.value.resident_id) return false;
     if (!formData.value.nama_kegiatan.trim()) return false;
     if (!formData.value.deskripsi_kegiatan.trim()) return false;
@@ -346,7 +346,7 @@ const handleSubmit = async () => {
 
     try {
         const submitData = new FormData();
-        submitData.append('kategori_proposal_id', formData.value.kategori_proposal_id);
+        submitData.append('kategori_proposal', formData.value.kategori_proposal);
         submitData.append('resident_id', formData.value.resident_id);
         submitData.append('nomor_telepon_pengaju', formData.value.nomor_telepon_pengaju);
         submitData.append('nama_kegiatan', formData.value.nama_kegiatan);
@@ -433,19 +433,6 @@ const handleSubmit = async () => {
     }
 };
 
-// Get options from props or page props
-const kategoriOptions = computed(() => {
-    if (props.listKategoriProposal) {
-        if (typeof props.listKategoriProposal === 'object' && !Array.isArray(props.listKategoriProposal)) {
-            return Object.entries(props.listKategoriProposal).map(([id, nama]) => ({
-                value: id,
-                label: nama,
-            }));
-        }
-    }
-    return [];
-});
-
 const residentOptions = computed(() => {
     if (props.listResident && Array.isArray(props.listResident)) {
         return props.listResident;
@@ -463,23 +450,16 @@ const residentOptions = computed(() => {
             </CardHeader>
             <CardContent class="space-y-4">
                 <div>
-                    <Label for="kategori_proposal_id">
+                    <Label for="kategori_proposal">
                         Kategori Proposal <span class="text-destructive">*</span>
                     </Label>
-                    <Select v-model="formData.kategori_proposal_id" required>
-                        <SelectTrigger id="kategori_proposal_id">
-                            <SelectValue placeholder="Pilih Kategori Proposal" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem
-                                v-for="option in kategoriOptions"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Input
+                        id="kategori_proposal"
+                        v-model="formData.kategori_proposal"
+                        type="text"
+                        placeholder="Masukkan kategori proposal (misal: Kegiatan Sosial, Infrastruktur, dll.)"
+                        required
+                    />
                 </div>
 
                 <div>
@@ -566,6 +546,24 @@ const residentOptions = computed(() => {
                 <CardTitle class="text-lg">File Pendukung</CardTitle>
             </CardHeader>
             <CardContent class="space-y-4">
+                <!-- Template Proposal -->
+                <div class="flex items-start justify-between gap-4 p-3 rounded-md bg-muted/40 border">
+                    <div class="flex items-start gap-3">
+                        <FileText class="w-5 h-5 mt-1 text-primary" />
+                        <div>
+                            <p class="font-medium text-sm">Template Proposal</p>
+                            <p class="text-xs text-muted-foreground">
+                                Unduh template proposal ini jika Anda belum memiliki format proposal. Silakan isi dan upload kembali sebagai file pendukung.
+                            </p>
+                        </div>
+                    </div>
+                    <Button as-child variant="outline" size="sm">
+                        <a href="/template-proposal.docx" download>
+                            Download Template
+                        </a>
+                    </Button>
+                </div>
+
                 <div>
                     <Label>Upload File Pendukung</Label>
                     <div class="mt-2">

@@ -8,6 +8,7 @@ use App\Models\PengajuanSurat;
 use App\Models\PengajuanSuratAtribut;
 use App\Models\JenisSurat;
 use App\Models\AtributJenisSurat;
+use App\Models\UsersRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -700,6 +701,225 @@ class PengajuanSuratController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengekspor PDF',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * List pengajuan surat untuk verifikasi RT (PWA)
+     *
+     * Hanya menampilkan pengajuan dari warga yang berada di RT user yang login (role RT, role_id = 36).
+     */
+    public function indexRtPwa(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak terautentikasi',
+                ], 401);
+            }
+
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) // RT
+                ->whereNotNull('rt_id')
+                ->first();
+
+            if (!$userRole || !$userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun ini tidak memiliki akses sebagai RT atau belum terhubung dengan data RT.',
+                ], 403);
+            }
+
+            // Filter pengajuan berdasarkan RT
+            $data = $this->repository->customIndex([
+                'filter_rt_id' => $userRole->rt_id,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data['pengajuan_surat'] ?? [],
+                'meta' => $data['meta'] ?? [],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data pengajuan surat untuk RT',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Detail pengajuan surat untuk verifikasi RT (PWA)
+     */
+    public function showRtPwa(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak terautentikasi',
+                ], 401);
+            }
+
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) // RT
+                ->whereNotNull('rt_id')
+                ->first();
+
+            if (!$userRole || !$userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun ini tidak memiliki akses sebagai RT atau belum terhubung dengan data RT.',
+                ], 403);
+            }
+
+            $pengajuan = $this->repository->getById($id);
+
+            if (!$pengajuan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pengajuan surat tidak ditemukan',
+                ], 404);
+            }
+
+            $resident = $pengajuan->resident;
+            if (
+                !$resident ||
+                !$resident->family ||
+                !$resident->family->house ||
+                $resident->family->house->rt_id != $userRole->rt_id
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pengajuan surat ini bukan dari warga di RT Anda.',
+                ], 403);
+            }
+
+            $data = $this->repository->customShow([], $pengajuan);
+
+            // Sertakan atribut detail dan informasi warga
+            return response()->json([
+                'success' => true,
+                'data' => $data['item'] ?? $pengajuan,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail pengajuan surat untuk RT',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Verifikasi pengajuan surat oleh RT (PWA)
+     *
+     * RT dapat menyetujui atau menolak pengajuan surat warga di RT-nya.
+     */
+    public function verifyRtPwa(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak terautentikasi',
+                ], 401);
+            }
+
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) // RT
+                ->whereNotNull('rt_id')
+                ->first();
+
+            if (!$userRole || !$userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun ini tidak memiliki akses sebagai RT atau belum terhubung dengan data RT.',
+                ], 403);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|in:diverifikasi_rt,ditolak',
+                'rt_catatan' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $pengajuan = $this->repository->getById($id);
+
+            if (!$pengajuan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pengajuan surat tidak ditemukan',
+                ], 404);
+            }
+
+            $resident = $pengajuan->resident;
+            if (
+                !$resident ||
+                !$resident->family ||
+                !$resident->family->house ||
+                $resident->family->house->rt_id != $userRole->rt_id
+            ) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pengajuan surat ini bukan dari warga di RT Anda.',
+                ], 403);
+            }
+
+            if ($pengajuan->status !== 'menunggu') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pengajuan surat ini sudah diverifikasi atau tidak dapat diverifikasi.',
+                ], 400);
+            }
+
+            DB::beginTransaction();
+
+            $dataUpdate = [
+                'status' => $request->input('status'),
+                'rt_verifikasi_id' => $user->id,
+                'rt_verifikasi_at' => now(),
+                'rt_catatan' => $request->input('rt_catatan'),
+            ];
+
+            if ($request->input('status') === 'ditolak') {
+                $dataUpdate['alasan_penolakan'] = $request->input('rt_catatan');
+            }
+
+            $pengajuan->update($dataUpdate);
+
+            DB::commit();
+
+            $pengajuan->refresh();
+            $data = $this->repository->customShow([], $pengajuan);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pengajuan surat berhasil diverifikasi oleh RT.',
+                'data' => $data['item'] ?? $pengajuan,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memverifikasi pengajuan surat oleh RT',
                 'error' => $e->getMessage(),
             ], 500);
         }

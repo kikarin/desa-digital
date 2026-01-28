@@ -16,7 +16,7 @@ class PengajuanProposal extends Model
     protected $table = 'pengajuan_proposal';
 
     protected $fillable = [
-        'kategori_proposal_id',
+        'kategori_proposal_nama',
         'resident_id',
         'nomor_telepon_pengaju',
         'nama_kegiatan',

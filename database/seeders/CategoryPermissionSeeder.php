@@ -98,6 +98,7 @@ class CategoryPermissionSeeder extends Seeder
                     'Pengajuan Surat Verifikasi',
                     'Pengajuan Surat Export PDF',
                     'Pengajuan Surat Preview PDF',
+                    'Pengajuan Surat RT Verifikasi',
                 ],
             ],
             [

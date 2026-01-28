@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\PengajuanSuratRequest;
 use App\Http\Requests\VerifikasiPengajuanSuratRequest;
+use App\Http\Requests\VerifikasiRtPengajuanSuratRequest;
 use App\Repositories\PengajuanSuratRepository;
 use App\Repositories\AdminTandaTanganRepository;
 use App\Traits\BaseTrait;
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use App\Models\PengajuanSuratAtribut;
+use App\Models\UsersRole;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class PengajuanSuratController extends Controller implements HasMiddleware
@@ -53,6 +55,7 @@ class PengajuanSuratController extends Controller implements HasMiddleware
             new Middleware("can:Pengajuan Saya Show", only: ['indexPengajuanSaya', 'createPengajuanSaya', 'showPengajuanSaya', 'editPengajuanSaya', 'apiIndexPengajuanSaya']),
             new Middleware("can:Pengajuan Saya Add", only: ['store']),
             new Middleware("can:Pengajuan Saya Edit", only: ['update']),
+            new Middleware("can:Pengajuan Surat RT Verifikasi", only: ['indexRt', 'verifikasiRt', 'storeVerifikasiRt', 'apiIndexRt']),
         ];
     }
 
@@ -98,6 +101,55 @@ class PengajuanSuratController extends Controller implements HasMiddleware
         
         // Panggil customIndex dengan filter yang sudah di-set
         $data = $this->repository->customIndex(['filter_created_by' => $user->id]);
+        return response()->json([
+            'data' => $data['pengajuan_surat'] ?? [],
+            'meta' => [
+                'total'        => $data['meta']['total'] ?? 0,
+                'current_page' => $data['meta']['current_page'] ?? 1,
+                'per_page'     => $data['meta']['per_page'] ?? 10,
+                'search'       => $data['meta']['search'] ?? '',
+                'sort'         => $data['meta']['sort'] ?? '',
+                'order'        => $data['meta']['order'] ?? 'desc',
+            ],
+        ]);
+    }
+
+    /**
+     * API Index untuk verifikasi RT - hanya menampilkan pengajuan dari warga RT mereka
+     */
+    public function apiIndexRt()
+    {
+        $user = Auth::user();
+        
+        $userRole = UsersRole::where('users_id', $user->id)
+            ->where('role_id', 36) 
+            ->whereNotNull('rt_id')
+            ->first();
+        
+        if (!$userRole || !$userRole->rt_id) {
+            return response()->json([
+                'data' => [],
+                'meta' => [
+                    'total'        => 0,
+                    'current_page' => 1,
+                    'per_page'     => 10,
+                    'search'       => request('search', ''),
+                    'sort'         => request('sort', ''),
+                    'order'        => request('order', 'desc'),
+                ],
+            ], 403);
+        }
+
+        // Set filter RT di request, tanpa mengunci status
+        request()->merge([
+            'filter_rt_id' => $userRole->rt_id,
+        ]);
+
+        // Panggil customIndex dengan filter RT (status bebas, bisa difilter via query jika diperlukan)
+        $data = $this->repository->customIndex([
+            'filter_rt_id' => $userRole->rt_id,
+        ]);
+
         return response()->json([
             'data' => $data['pengajuan_surat'] ?? [],
             'meta' => [
@@ -212,6 +264,71 @@ class PengajuanSuratController extends Controller implements HasMiddleware
         }
         $data = $this->repository->customIndex($data);
         return inertia('modules/layanan-surat/pengajuan-saya/Index', $data);
+    }
+
+    public function indexRt()
+    {
+        $user = Auth::user();
+        
+        $userRole = UsersRole::where('users_id', $user->id)
+            ->where('role_id', 36) 
+            ->whereNotNull('rt_id')
+            ->first();
+        
+        if (!$userRole || !$userRole->rt_id) {
+            abort(403, 'Anda tidak memiliki akses untuk halaman ini.');
+        }
+
+        request()->merge([
+            'filter_rt_id' => $userRole->rt_id,
+        ]);
+        
+        $data = $this->commonData + [
+            'filter_rt_id' => $userRole->rt_id,
+            'rt_id' => $userRole->rt_id,
+        ];
+        
+        $data['can'] = [
+            'Verifikasi' => $user && method_exists($user, 'can') ? $user->can('Pengajuan Surat RT Verifikasi') : false,
+        ];
+        
+        $data = $this->repository->customIndex($data);
+        return inertia('modules/layanan-surat/pengajuan-surat-rt/Index', $data);
+    }
+
+    /**
+     * Show untuk verifikasi RT
+     */
+    public function showRt($id)
+    {
+        $user = Auth::user();
+        
+        $userRole = UsersRole::where('users_id', $user->id)
+            ->where('role_id', 36) 
+            ->whereNotNull('rt_id')
+            ->first();
+        
+        if (!$userRole || !$userRole->rt_id) {
+            abort(403, 'Anda tidak memiliki akses untuk halaman ini.');
+        }
+
+        $item = $this->repository->getById($id);
+        
+        $resident = $item->resident;
+        if (!$resident || !$resident->family || !$resident->family->house || $resident->family->house->rt_id != $userRole->rt_id) {
+            abort(403, 'Pengajuan surat ini bukan dari warga di RT Anda.');
+        }
+        
+        $data = $this->commonData + [
+            'item' => $item,
+        ];
+        
+        $data['can'] = [
+            'Verifikasi' => $user && method_exists($user, 'can') ? $user->can('Pengajuan Surat RT Verifikasi') : false,
+        ];
+        
+        $data = $this->repository->customShow($data, $item);
+        return inertia('modules/layanan-surat/pengajuan-surat-rt/Show', $data);
     }
 
     /**
@@ -460,26 +577,20 @@ class PengajuanSuratController extends Controller implements HasMiddleware
     }
 
     /**
-     * Show verifikasi form
+     * Show verifikasi form (Admin Desa)
      */
     public function verifikasi($id)
     {
-        // Load pengajuan with all necessary relationships
         $pengajuan = $this->repository->getById($id);
         
-        if (!in_array($pengajuan->status, ['menunggu', 'diperbaiki'])) {
+        if ($pengajuan->status !== 'diverifikasi_rt') {
             return redirect()->route('pengajuan-surat.show', $id)
-                ->with('error', 'Pengajuan surat sudah diverifikasi.');
+                ->with('error', 'Pengajuan surat harus diverifikasi RT terlebih dahulu.');
         }
 
         $data = $this->commonData + [
             'item' => $pengajuan,
         ];
-
-        // Get admin TTD options
-        $adminId = Auth::id();
-        $data['admin_ttd_digital'] = $this->adminTandaTanganRepository->getTtdByAdminAndType($adminId, 'digital');
-        $data['admin_ttd_foto'] = $this->adminTandaTanganRepository->getTtdByAdminAndType($adminId, 'foto');
 
         // Use customShow to get atribut_detail
         $data = $this->repository->customShow($data, $pengajuan);
@@ -487,7 +598,94 @@ class PengajuanSuratController extends Controller implements HasMiddleware
     }
 
     /**
-     * Store verifikasi
+     * Show verifikasi form untuk RT
+     */
+    public function verifikasiRt($id)
+    {
+        $user = Auth::user();
+        
+        $userRole = UsersRole::where('users_id', $user->id)
+            ->where('role_id', 36) 
+            ->whereNotNull('rt_id')
+            ->first();
+        
+        if (!$userRole || !$userRole->rt_id) {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk verifikasi RT.');
+        }
+
+        $pengajuan = $this->repository->getById($id);
+        
+        $resident = $pengajuan->resident;
+        if (!$resident || !$resident->family || !$resident->family->house || $resident->family->house->rt_id != $userRole->rt_id) {
+            return redirect()->back()->with('error', 'Pengajuan surat ini bukan dari warga di RT Anda.');
+        }
+        
+        if ($pengajuan->status !== 'menunggu') {
+            return redirect()->back()->with('error', 'Pengajuan surat ini sudah diverifikasi atau tidak dapat diverifikasi.');
+        }
+
+        $data = $this->commonData + [
+            'item' => $pengajuan,
+        ];
+
+        $data = $this->repository->customShow($data, $pengajuan);
+        return inertia("modules/layanan-surat/pengajuan-surat-rt/VerifikasiRt", $data);
+    }
+
+    /**
+     * Store verifikasi RT
+     */
+    public function storeVerifikasiRt(VerifikasiRtPengajuanSuratRequest $request)
+    {
+        try {
+            DB::beginTransaction();
+
+            $user = Auth::user();
+            
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) 
+                ->whereNotNull('rt_id')
+                ->first();
+            
+            if (!$userRole || !$userRole->rt_id) {
+                return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk verifikasi RT.');
+            }
+
+            $pengajuan = $this->repository->getById($request->id);
+            
+            $resident = $pengajuan->resident;
+            if (!$resident || !$resident->family || !$resident->family->house || $resident->family->house->rt_id != $userRole->rt_id) {
+                return redirect()->back()->with('error', 'Pengajuan surat ini bukan dari warga di RT Anda.');
+            }
+            
+            if ($pengajuan->status !== 'menunggu') {
+                return redirect()->back()->with('error', 'Pengajuan surat ini sudah diverifikasi atau tidak dapat diverifikasi.');
+            }
+
+            $data = [
+                'status' => $request->status,
+                'rt_verifikasi_id' => $user->id,
+                'rt_verifikasi_at' => now(),
+                'rt_catatan' => $request->rt_catatan,
+            ];
+
+            if ($request->status === 'ditolak') {
+                $data['alasan_penolakan'] = $request->rt_catatan;
+            }
+
+            $pengajuan->update($data);
+
+            DB::commit();
+            return redirect()->route('pengajuan-surat-rt.index')
+                ->with('success', 'Pengajuan surat berhasil diverifikasi.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'Gagal memverifikasi pengajuan surat: ' . $e->getMessage())->withInput();
+        }
+    }
+
+    /**
+     * Store verifikasi (Admin Desa)
      */
     public function storeVerifikasi(VerifikasiPengajuanSuratRequest $request)
     {
@@ -496,8 +694,8 @@ class PengajuanSuratController extends Controller implements HasMiddleware
 
             $pengajuan = $this->repository->getById($request->id);
             
-            if (!in_array($pengajuan->status, ['menunggu', 'diperbaiki'])) {
-                return redirect()->back()->with('error', 'Pengajuan surat sudah diverifikasi.');
+            if ($pengajuan->status !== 'diverifikasi_rt') {
+                return redirect()->back()->with('error', 'Pengajuan surat harus diverifikasi RT terlebih dahulu.');
             }
 
             $adminId = Auth::id();
@@ -507,64 +705,14 @@ class PengajuanSuratController extends Controller implements HasMiddleware
             ];
 
             if ($request->status === 'disetujui') {
+                // Tandatangan admin tidak lagi diwajibkan / disimpan.
+                // Sistem hanya mencatat tanggal disetujui dan nomor surat.
                 $data['tanggal_disetujui'] = now();
-                
-                // Handle tanda tangan
-                if ($request->tanda_tangan_type === 'digital') {
-                    if ($request->use_existing_ttd === 'yes') {
-                        // Use existing TTD from admin_tanda_tangan
-                        $adminTtd = $this->adminTandaTanganRepository->getTtdByAdminAndType($adminId, 'digital');
-                        if ($adminTtd && $adminTtd->tanda_tangan_digital) {
-                            $data['tanda_tangan_digital'] = $adminTtd->tanda_tangan_digital;
-                            $data['tanda_tangan_type'] = 'digital';
-                        }
-                    } else {
-                        // Save new TTD digital (base64 string from canvas)
-                        if ($request->tanda_tangan_digital) {
-                            // Handle as base64 string (from canvas toDataURL)
-                            $ttdData = $request->tanda_tangan_digital;
-                            // Ensure it's in correct format
-                            if (!str_starts_with($ttdData, 'data:')) {
-                                $ttdData = 'data:image/png;base64,' . $ttdData;
-                            }
-                            $data['tanda_tangan_digital'] = $ttdData;
-                            $data['tanda_tangan_type'] = 'digital';
-
-                            // Save to admin_tanda_tangan if not exists
-                            $adminTtd = $this->adminTandaTanganRepository->getOrCreateTtd($adminId, 'digital');
-                            if (!$adminTtd->tanda_tangan_digital) {
-                                $adminTtd->update(['tanda_tangan_digital' => $ttdData]);
-                            }
-                        }
-                    }
-                } else {
-                    // Handle foto TTD
-                    if ($request->use_existing_ttd === 'yes') {
-                        // Use existing TTD from admin_tanda_tangan
-                        $adminTtd = $this->adminTandaTanganRepository->getTtdByAdminAndType($adminId, 'foto');
-                        if ($adminTtd && $adminTtd->foto_tanda_tangan) {
-                            $data['foto_tanda_tangan'] = $adminTtd->foto_tanda_tangan;
-                            $data['tanda_tangan_type'] = 'foto';
-                        }
-                    } else {
-                        // Upload new foto TTD
-                        if ($request->hasFile('foto_tanda_tangan')) {
-                            $file = $request->file('foto_tanda_tangan');
-                            $path = $file->store('admin-tanda-tangan', 'public');
-                            $data['foto_tanda_tangan'] = $path;
-                            $data['tanda_tangan_type'] = 'foto';
-
-                            // Save to admin_tanda_tangan if not exists
-                            $adminTtd = $this->adminTandaTanganRepository->getOrCreateTtd($adminId, 'foto');
-                            if (!$adminTtd->foto_tanda_tangan) {
-                                $adminTtd->update(['foto_tanda_tangan' => $path]);
-                            }
-                        }
-                    }
-                }
-
-                // Generate nomor surat
                 $data['nomor_surat'] = $this->repository->generateNomorSurat($pengajuan);
+                // Pastikan field tanda tangan dikosongkan jika sebelumnya pernah terisi.
+                $data['tanda_tangan_digital'] = null;
+                $data['foto_tanda_tangan'] = null;
+                $data['tanda_tangan_type'] = null;
             } else {
                 $data['alasan_penolakan'] = $request->alasan_penolakan;
             }

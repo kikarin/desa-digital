@@ -37,41 +37,41 @@ const columns = [
             }
         },
     },
-    {
-        key: 'desil',
-        label: 'Desil Target',
-        searchable: false,
-        orderable: false,
-        visible: true,
-        format: (row: any) => {
-            if (!row.desil_min || !row.desil_max) {
-                return '<span class="px-2 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-full">-</span>';
-            }
+    // {
+    //     key: 'desil',
+    //     label: 'Desil Target',
+    //     searchable: false,
+    //     orderable: false,
+    //     visible: true,
+    //     format: (row: any) => {
+    //         if (!row.desil_min || !row.desil_max) {
+    //             return '<span class="px-2 py-1 text-xs font-semibold text-gray-600 bg-gray-100 rounded-full">-</span>';
+    //         }
             
-            const getDesilColor = (desil: number) => {
-                if (desil <= 1) return { bg: 'bg-red-100', text: 'text-red-800' };
-                if (desil <= 2) return { bg: 'bg-orange-100', text: 'text-orange-800' };
-                if (desil <= 3) return { bg: 'bg-yellow-100', text: 'text-yellow-800' };
-                if (desil <= 4) return { bg: 'bg-lime-100', text: 'text-lime-800' };
-                if (desil <= 5) return { bg: 'bg-green-100', text: 'text-green-800' };
-                return { bg: 'bg-emerald-100', text: 'text-emerald-800' };
-            };
+    //         const getDesilColor = (desil: number) => {
+    //             if (desil <= 1) return { bg: 'bg-red-100', text: 'text-red-800' };
+    //             if (desil <= 2) return { bg: 'bg-orange-100', text: 'text-orange-800' };
+    //             if (desil <= 3) return { bg: 'bg-yellow-100', text: 'text-yellow-800' };
+    //             if (desil <= 4) return { bg: 'bg-lime-100', text: 'text-lime-800' };
+    //             if (desil <= 5) return { bg: 'bg-green-100', text: 'text-green-800' };
+    //             return { bg: 'bg-emerald-100', text: 'text-emerald-800' };
+    //         };
             
-            const minColor = getDesilColor(row.desil_min);
-            const maxColor = getDesilColor(row.desil_max);
+    //         const minColor = getDesilColor(row.desil_min);
+    //         const maxColor = getDesilColor(row.desil_max);
             
-            if (row.desil_min === row.desil_max) {
-                const color = minColor;
-                return `<span class="px-2 py-1 text-xs font-semibold ${color.text} ${color.bg} rounded-full">Desil ${row.desil_min}</span>`;
-            }
+    //         if (row.desil_min === row.desil_max) {
+    //             const color = minColor;
+    //             return `<span class="px-2 py-1 text-xs font-semibold ${color.text} ${color.bg} rounded-full">Desil ${row.desil_min}</span>`;
+    //         }
             
-            return `<span class="px-2 py-1 text-xs font-semibold rounded-full inline-flex items-center gap-1">
-                <span class="${minColor.text} ${minColor.bg} px-1.5 py-0.5 rounded">${row.desil_min}</span>
-                <span class="text-gray-500">-</span>
-                <span class="${maxColor.text} ${maxColor.bg} px-1.5 py-0.5 rounded">${row.desil_max}</span>
-            </span>`;
-        },
-    },
+    //         return `<span class="px-2 py-1 text-xs font-semibold rounded-full inline-flex items-center gap-1">
+    //             <span class="${minColor.text} ${minColor.bg} px-1.5 py-0.5 rounded">${row.desil_min}</span>
+    //             <span class="text-gray-500">-</span>
+    //             <span class="${maxColor.text} ${maxColor.bg} px-1.5 py-0.5 rounded">${row.desil_max}</span>
+    //         </span>`;
+    //     },
+    // },
     {
         key: 'status',
         label: 'Status',
