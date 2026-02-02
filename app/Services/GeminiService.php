@@ -18,8 +18,8 @@ class GeminiService
     {
         $this->apiKey = config('services.gemini.api_key', '');
         $this->model = config('services.gemini.model', 'gemini-pro');
-        $this->timeout = (int) config('services.gemini.timeout', 15);
-        $this->maxTokens = (int) config('services.gemini.max_tokens', 500);
+        $this->timeout = (int) config('services.gemini.timeout', 35);
+        $this->maxTokens = (int) config('services.gemini.max_tokens', 3000);
         $this->temperature = (float) config('services.gemini.temperature', 0.7);
     }
 

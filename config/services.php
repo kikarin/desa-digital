@@ -36,9 +36,9 @@ return [
     ],
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'), // Model terbaru yang tersedia
-        'timeout' => env('GEMINI_TIMEOUT', 10),
-        'max_tokens' => env('GEMINI_MAX_TOKENS', 500),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'), 
+        'timeout' => env('GEMINI_TIMEOUT', 30),
+        'max_tokens' => env('GEMINI_MAX_TOKENS', 3000),
         'temperature' => env('GEMINI_TEMPERATURE', 0.7),
     ],
     
