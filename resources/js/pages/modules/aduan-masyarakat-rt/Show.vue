@@ -37,28 +37,29 @@ const props = defineProps<{
             file_type: string;
             file_name: string;
         }>;
-        created_at: string;
-        created_by_user: {
+        rt_verifikasi_id: number | null;
+        rt_verifikasi_at: string | null;
+        rt_catatan: string | null;
+        rt_verifikasi_user: {
             id: number;
             name: string;
         } | null;
-        updated_at: string;
-        updated_by_user: {
+        created_at: string;
+        created_by_user: {
             id: number;
             name: string;
         } | null;
     };
     can?: {
         Verifikasi?: boolean;
-        Delete?: boolean;
     };
 }>();
 
 const breadcrumbs = [
-    { title: 'Aduan Masyarakat', href: '/aduan-masyarakat' },
-    { title: 'Detail Aduan', href: `/aduan-masyarakat/${props.item.id}` },
+    { title: 'Aduan', href: '#' },
+    { title: 'Verifikasi Aduan RT', href: '/aduan-masyarakat-rt' },
+    { title: 'Detail Aduan', href: `/aduan-masyarakat-rt/${props.item.id}` },
 ];
-
 
 const fields = [
     { label: 'Kategori', value: props.item.kategori_aduan_nama },
@@ -82,36 +83,50 @@ const fields = [
     { label: 'Alasan Melaporkan', value: props.item.alasan_melaporkan || '-', className: 'sm:col-span-2' },
 ];
 
+if (props.item.rt_verifikasi_at) {
+    fields.push({ 
+        label: 'Diverifikasi RT Pada', 
+        value: props.item.rt_verifikasi_at ? new Date(props.item.rt_verifikasi_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) : '-' 
+    });
+}
+
+if (props.item.rt_verifikasi_user) {
+    fields.push({ label: 'Diverifikasi Oleh RT', value: props.item.rt_verifikasi_user.name });
+}
+
+if (props.item.rt_catatan) {
+    fields.push({ label: 'Catatan RT', value: props.item.rt_catatan, className: 'sm:col-span-2' });
+}
+
 const actionFields = [
     { label: 'Created At', value: new Date(props.item.created_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
     { label: 'Created By', value: props.item.created_by_user?.name || '-' },
-    { label: 'Updated At', value: new Date(props.item.updated_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }) },
-    { label: 'Updated By', value: props.item.updated_by_user?.name || '-' },
 ];
 
-
-const handleDelete = () => {
-    router.delete(`/aduan-masyarakat/${props.item.id}`, {
-        onSuccess: () => {
-            toast({ title: 'Data berhasil dihapus', variant: 'success' });
-            router.visit('/aduan-masyarakat');
-        },
-        onError: () => {
-            toast({ title: 'Gagal menghapus data', variant: 'destructive' });
-        },
-    });
+const handleVerifikasi = () => {
+    if (props.item.status === 'menunggu_verifikasi' && props.can?.Verifikasi) {
+        router.visit(`/aduan-masyarakat-rt/${props.item.id}/verifikasi`);
+    }
 };
 </script>
 
 <template>
     <PageShow
-        title="Aduan Masyarakat"
+        title="Detail Aduan RT"
         :breadcrumbs="breadcrumbs"
         :fields="fields"
         :action-fields="actionFields"
-        :back-url="'/aduan-masyarakat'"
-        :on-delete="item.status !== 'selesai' && can?.Delete ? handleDelete : undefined"
+        :back-url="'/aduan-masyarakat-rt'"
     >
+        <template #custom-action>
+            <Button
+                v-if="item.status === 'menunggu_verifikasi' && can?.Verifikasi"
+                @click="handleVerifikasi"
+                variant="default"
+            >
+                Verifikasi
+            </Button>
+        </template>
         <template #custom>
             <!-- Peta Lokasi -->
             <div class="mt-4">

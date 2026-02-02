@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import ToastContainer from '@/components/ui/toast/ToastContainer.vue';
 import AppLayout from '@/layouts/app/AppSidebarLayout.vue';
+import Chatbot from '@/components/Chatbot.vue';
 import type { BreadcrumbItemType } from '@/types';
 
 interface Props {
@@ -16,5 +17,6 @@ withDefaults(defineProps<Props>(), {
     <AppLayout :breadcrumbs="breadcrumbs">
         <ToastContainer />
         <slot />
+        <Chatbot />
     </AppLayout>
 </template>

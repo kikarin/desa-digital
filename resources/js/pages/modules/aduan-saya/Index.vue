@@ -28,13 +28,15 @@ const columns = [
         orderable: true,
         visible: true,
         format: (row: any) => {
-            if (row.status === 'selesai') {
-                return '<span class="px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200">SELESAI</span>';
-            } else if (row.status === 'dibatalkan') {
-                return '<span class="px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-200">DIBATALKAN</span>';
-            } else {
-                return '<span class="px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">MENUNGGU VERIFIKASI</span>';
-            }
+            const statusMap: Record<string, { label: string; class: string }> = {
+                menunggu_verifikasi: { label: 'Menunggu Verifikasi RT', class: 'px-2 py-1 text-xs font-semibold text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200' },
+                diverifikasi_rt: { label: 'Sudah Diverifikasi RT', class: 'px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200' },
+                diverifikasi_admin: { label: 'Diverifikasi Admin', class: 'px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200' },
+                selesai: { label: 'Selesai', class: 'px-2 py-1 text-xs font-semibold text-green-800 bg-green-100 rounded-full dark:bg-green-900 dark:text-green-200' },
+                dibatalkan: { label: 'Dibatalkan', class: 'px-2 py-1 text-xs font-semibold text-red-800 bg-red-100 rounded-full dark:bg-red-900 dark:text-red-200' },
+            };
+            const status = statusMap[row.status] || { label: row.status, class: 'px-2 py-1 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full dark:bg-gray-900 dark:text-gray-200' };
+            return `<span class="${status.class}">${status.label}</span>`;
         },
     },
     {

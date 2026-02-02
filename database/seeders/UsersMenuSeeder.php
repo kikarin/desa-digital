@@ -203,6 +203,13 @@ class UsersMenuSeeder extends Seeder
                         'urutan'        => 2,
                         'permission_id' => 'Aduan Saya Show',
                     ],
+                    [
+                        'nama'          => 'Verifikasi Aduan RT',
+                        'kode'          => 'ADUAN-MASYARAKAT-RT',
+                        'url'           => '/aduan-masyarakat-rt',
+                        'urutan'        => 3,
+                        'permission_id' => 'Aduan Masyarakat RT Verifikasi',
+                    ],
                 ],
             ],
             [

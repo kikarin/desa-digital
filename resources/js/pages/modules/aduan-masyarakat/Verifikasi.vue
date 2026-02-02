@@ -77,11 +77,15 @@ const actionFields = [
 ];
 
 
-const status = ref<'menunggu_verifikasi' | 'selesai' | 'dibatalkan' | null>(null);
-const catatan = ref('');
+const status = ref<'diverifikasi_admin' | 'selesai' | 'dibatalkan' | null>(null);
+const adminCatatan = ref('');
 
 const canSubmit = computed(() => {
-    return status.value !== null && status.value !== props.item.status;
+    if (!status.value) return false;
+    if (status.value === 'dibatalkan' && !adminCatatan.value.trim()) {
+        return false; // Catatan wajib jika dibatalkan
+    }
+    return status.value !== props.item.status;
 });
 
 const handleSubmit = async () => {
@@ -96,8 +100,8 @@ const handleSubmit = async () => {
     try {
         const formData = new FormData();
         formData.append('status', status.value!);
-        if (catatan.value) {
-            formData.append('catatan', catatan.value);
+        if (adminCatatan.value) {
+            formData.append('admin_catatan', adminCatatan.value);
         }
 
         await axios.post(`/aduan-masyarakat/${props.item.id}/verifikasi`, formData, {
@@ -167,6 +171,10 @@ const handleSubmit = async () => {
                             <Label>Status Verifikasi <span class="text-red-500">*</span></Label>
                             <RadioGroup :model-value="status ?? undefined" @update:model-value="(val: string) => status = val as any" class="mt-2">
                                 <div class="flex items-center space-x-2">
+                                    <RadioGroupItem value="diverifikasi_admin" id="diverifikasi_admin" />
+                                    <Label for="diverifikasi_admin" class="cursor-pointer">Diverifikasi Admin</Label>
+                                </div>
+                                <div class="flex items-center space-x-2">
                                     <RadioGroupItem value="selesai" id="selesai" />
                                     <Label for="selesai" class="cursor-pointer">Selesai</Label>
                                 </div>
@@ -177,16 +185,22 @@ const handleSubmit = async () => {
                             </RadioGroup>
                         </div>
 
-                        <!-- Catatan (Optional) -->
+                        <!-- Catatan -->
                         <div>
-                            <Label for="catatan">Catatan (Opsional)</Label>
+                            <Label for="admin_catatan">
+                                Catatan Admin 
+                                <span v-if="status === 'dibatalkan'" class="text-red-500">*</span>
+                            </Label>
                             <Textarea
-                                id="catatan"
-                                v-model="catatan"
-                                placeholder="Masukkan catatan verifikasi (opsional)"
+                                id="admin_catatan"
+                                v-model="adminCatatan"
+                                :placeholder="status === 'dibatalkan' ? 'Catatan wajib diisi jika aduan dibatalkan' : 'Masukkan catatan verifikasi (opsional)'"
                                 :rows="3"
                                 class="mt-2"
                             />
+                            <p v-if="status === 'dibatalkan'" class="text-xs text-muted-foreground mt-1">
+                                Catatan wajib diisi jika aduan dibatalkan
+                            </p>
                         </div>
 
                         <!-- Submit Button -->

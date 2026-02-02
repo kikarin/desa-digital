@@ -28,11 +28,9 @@ const formData = ref({
 
 const isLoading = ref(false);
 
-// Handle location selected from LocationMapPicker
 const handleLocationSelected = (data: { lat: number; lng: number; address?: string }) => {
     if (data.address) {
         formData.value.alamat = data.address;
-        // Extract road name for title
         const addressParts = data.address.split(',');
         formData.value.title = addressParts[0] || 'Layanan Darurat';
     }
@@ -106,10 +104,10 @@ const handleSave = () => {
                             <SelectValue placeholder="Pilih kategori" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="polsek">Polsek</SelectItem>
-                            <SelectItem value="puskesmas">Puskesmas</SelectItem>
-                            <SelectItem value="pemadam_kebakaran">Pemadam Kebakaran</SelectItem>
-                            <SelectItem value="rumah_sakit">Rumah Sakit</SelectItem>
+                            <SelectItem value="bhabinkamtibmas">Bhabinkamtibmas</SelectItem>
+                            <SelectItem value="mobil_siaga">Mobil Siaga</SelectItem>
+                            <SelectItem value="pemadam_kebakaran">Damkar</SelectItem>
+                            <SelectItem value="kantor_desa">Kantor Desa</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

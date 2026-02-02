@@ -120,6 +120,7 @@ class CategoryPermissionSeeder extends Seeder
             [
                 'name'       => 'Aduan Masyarakat',
                 'permission' => ['Aduan Masyarakat Show', 'Aduan Masyarakat Add', 'Aduan Masyarakat Edit', 'Aduan Masyarakat Detail', 'Aduan Masyarakat Delete', 'Aduan Masyarakat Verifikasi'],
+                'permission_common' => ['Aduan Masyarakat RT Verifikasi'],
             ],
             [
                 'name'       => 'Aduan Saya',

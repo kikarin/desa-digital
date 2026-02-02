@@ -30,6 +30,7 @@ use App\Http\Controllers\AduanMasyarakatController;
 use App\Http\Controllers\KategoriProposalController;
 use App\Http\Controllers\PengajuanProposalController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Api\ChatbotController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
@@ -268,9 +269,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('/aduan-masyarakat', AduanMasyarakatController::class)->names('aduan-masyarakat');
     Route::get('/api/aduan-masyarakat', [AduanMasyarakatController::class, 'apiIndex']);
     Route::get('/api/aduan-masyarakat/{id}', [AduanMasyarakatController::class, 'apiShow']);
+    Route::get('/api/aduan-masyarakat-rt', [AduanMasyarakatController::class, 'apiIndexRt'])->name('aduan-masyarakat-rt.api-index');
     Route::get('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'verifikasi'])->name('aduan-masyarakat.verifikasi');
     Route::post('/aduan-masyarakat/{id}/verifikasi', [AduanMasyarakatController::class, 'storeVerifikasi'])->name('aduan-masyarakat.store-verifikasi');
     Route::post('/aduan-masyarakat/destroy-selected', [AduanMasyarakatController::class, 'destroy_selected'])->name('aduan-masyarakat.destroy-selected');
+
+    // Verifikasi RT (untuk RT)
+    Route::get('/aduan-masyarakat-rt', [AduanMasyarakatController::class, 'indexRt'])->name('aduan-masyarakat-rt.index');
+    Route::get('/aduan-masyarakat-rt/{id}', [AduanMasyarakatController::class, 'showRt'])->name('aduan-masyarakat-rt.show');
+    Route::get('/aduan-masyarakat-rt/{id}/verifikasi', [AduanMasyarakatController::class, 'verifikasiRt'])->name('aduan-masyarakat-rt.verifikasi');
+    Route::post('/aduan-masyarakat-rt/{id}/verifikasi', [AduanMasyarakatController::class, 'storeVerifikasiRt'])->name('aduan-masyarakat-rt.store-verifikasi');
     Route::get('/api/aduan/kategori-aduan', [AduanMasyarakatController::class, 'getKategoriAduan']);
 });
 
@@ -307,6 +315,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pengajuan-proposal-saya/{id}/edit', [PengajuanProposalController::class, 'editPengajuanSaya'])->name('pengajuan-proposal-saya.edit');
     Route::put('/pengajuan-proposal-saya/{id}', [PengajuanProposalController::class, 'update'])->name('pengajuan-proposal-saya.update');
     Route::get('/api/pengajuan-proposal-saya', [PengajuanProposalController::class, 'apiIndexPengajuanSaya']);
+});
+
+// Chatbot AI Routes (untuk admin panel - menggunakan session auth)
+Route::middleware(['auth', 'verified'])->prefix('api/chatbot')->group(function () {
+    Route::post('/chat', [ChatbotController::class, 'chat']);
+    Route::get('/suggestions', [ChatbotController::class, 'suggestions']);
+    Route::get('/status', [ChatbotController::class, 'status']);
 });
 
 require __DIR__ . '/settings.php';

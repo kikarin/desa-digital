@@ -17,14 +17,20 @@ class AduanMasyarakatRepository
     public function __construct(AduanMasyarakat $model)
     {
         $this->model = $model;
-        $this->with = ['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files'];
+        $this->with = ['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi'];
+    }
+
+    public function getModel()
+    {
+        return $this->model;
     }
 
     public function customIndex($data, $filterByCreatedBy = false)
     {
         // Load relasi dengan null handling (withDefault sudah di-set di model)
-        $query = $this->model->with(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files'])
-            ->select('id', 'kategori_aduan_id', 'judul', 'detail_aduan', 'latitude', 'longitude', 'nama_lokasi', 'kecamatan_id', 'desa_id', 'deskripsi_lokasi', 'jenis_aduan', 'alasan_melaporkan', 'status', 'created_by', 'created_at');
+        // Pastikan semua field yang diperlukan termasuk status dan field verifikasi
+        $query = $this->model->with(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi'])
+            ->select('id', 'kategori_aduan_id', 'judul', 'detail_aduan', 'latitude', 'longitude', 'nama_lokasi', 'kecamatan_id', 'desa_id', 'deskripsi_lokasi', 'jenis_aduan', 'alasan_melaporkan', 'status', 'rt_verifikasi_id', 'rt_verifikasi_at', 'rt_catatan', 'admin_verifikasi_id', 'admin_verifikasi_at', 'admin_catatan', 'created_by', 'created_at', 'updated_at');
 
         // Filter by created_by jika untuk "Aduan Saya"
         if ($filterByCreatedBy && auth()->check()) {
@@ -93,9 +99,13 @@ class AduanMasyarakatRepository
 
         $page           = (int) request('page', 0);
         $pageForLaravel = $page < 1 ? 1 : $page + 1;
-        $items          = $query->paginate($perPage, ['*'], 'page', $pageForLaravel);
+        
+        // Pastikan query selalu mengambil data terbaru (tidak menggunakan cache)
+        $items = $query->paginate($perPage, ['*'], 'page', $pageForLaravel);
 
         $transformedData = $items->getCollection()->map(function ($item) {
+            // Refresh item untuk memastikan data terbaru
+            $item->refresh();
             return $this->transformItemList($item);
         });
 
@@ -128,7 +138,7 @@ class AduanMasyarakatRepository
             }
         }
 
-        return [
+        $result = [
             'id'                => $item->id,
             'judul'             => $item->judul,
             'tanggal'           => $item->created_at ? Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : '-',
@@ -137,7 +147,7 @@ class AduanMasyarakatRepository
             // Tambahkan field yang diperlukan untuk map
             'latitude'          => $item->latitude,
             'longitude'         => $item->longitude,
-            'status'            => $item->status,
+            'status'            => $item->status, // Pastikan status selalu terambil dari database
             'jenis_aduan'       => $item->jenis_aduan,
             'nama_lokasi'       => $item->nama_lokasi,
             'kecamatan_nama'    => $item->kecamatan?->nama ?? '-',
@@ -145,7 +155,14 @@ class AduanMasyarakatRepository
             'deskripsi_lokasi'  => $item->deskripsi_lokasi,
             'detail_aduan'      => $item->detail_aduan,
             'alasan_melaporkan' => $item->alasan_melaporkan,
+            'created_by_user'   => $item->created_by_user ? [
+                'id'   => $item->created_by_user->id,
+                'name' => $item->created_by_user->name,
+            ] : null,
+            'created_at'        => $item->created_at ? Carbon::parse($item->created_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
         ];
+        
+        return $result;
     }
 
     /**
@@ -182,6 +199,18 @@ class AduanMasyarakatRepository
                 'id'   => $item->created_by_user->id,
                 'name' => $item->created_by_user->name,
             ] : null,
+            'layanan_darurat'    => $item->layanan_darurat && $item->layanan_darurat->count() > 0 ? $item->layanan_darurat->map(function ($layanan) {
+                return [
+                    'id'             => $layanan->id,
+                    'kategori'       => $layanan->kategori,
+                    'kategori_label' => $layanan->kategori_label,
+                    'title'          => $layanan->title,
+                    'alamat'         => $layanan->alamat,
+                    'nomor_whatsapp' => $layanan->nomor_whatsapp,
+                    'latitude'       => $layanan->latitude,
+                    'longitude'      => $layanan->longitude,
+                ];
+            }) : [],
         ];
     }
 
@@ -210,6 +239,19 @@ class AduanMasyarakatRepository
                         'file_name' => $file->file_name,
                     ];
                 }) : [],
+                'layanan_darurat_ids' => $item->layanan_darurat ? $item->layanan_darurat->pluck('id')->toArray() : [],
+                'layanan_darurat'    => $item->layanan_darurat && $item->layanan_darurat->count() > 0 ? $item->layanan_darurat->map(function ($layanan) {
+                    return [
+                        'id'             => $layanan->id,
+                        'kategori'       => $layanan->kategori,
+                        'kategori_label' => $layanan->kategori_label,
+                        'title'          => $layanan->title,
+                        'alamat'         => $layanan->alamat,
+                        'nomor_whatsapp' => $layanan->nomor_whatsapp,
+                        'latitude'       => (string) $layanan->latitude,
+                        'longitude'      => (string) $layanan->longitude,
+                    ];
+                })->values()->toArray() : [],
             ];
         }
         return $data;
@@ -253,6 +295,32 @@ class AduanMasyarakatRepository
                     'id'   => $item->updated_by_user->id,
                     'name' => $item->updated_by_user->name,
                 ] : null,
+                'layanan_darurat'    => $item->layanan_darurat && $item->layanan_darurat->count() > 0 ? $item->layanan_darurat->map(function ($layanan) {
+                    return [
+                        'id'             => $layanan->id,
+                        'kategori'       => $layanan->kategori,
+                        'kategori_label' => $layanan->kategori_label,
+                        'title'          => $layanan->title,
+                        'alamat'         => $layanan->alamat,
+                        'nomor_whatsapp' => $layanan->nomor_whatsapp,
+                        'latitude'       => (string) $layanan->latitude,
+                        'longitude'      => (string) $layanan->longitude,
+                    ];
+                })->values()->toArray() : [],
+                'rt_verifikasi_id'   => $item->rt_verifikasi_id,
+                'rt_verifikasi_at'   => $item->rt_verifikasi_at ? Carbon::parse($item->rt_verifikasi_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'rt_catatan'         => $item->rt_catatan,
+                'rt_verifikasi_user' => $item->rt_verifikasi ? [
+                    'id'   => $item->rt_verifikasi->id,
+                    'name' => $item->rt_verifikasi->name,
+                ] : null,
+                'admin_verifikasi_id'   => $item->admin_verifikasi_id,
+                'admin_verifikasi_at'   => $item->admin_verifikasi_at ? Carbon::parse($item->admin_verifikasi_at)->timezone('Asia/Jakarta')->format('Y-m-d H:i:s') : null,
+                'admin_catatan'         => $item->admin_catatan,
+                'admin_verifikasi_user' => $item->admin_verifikasi ? [
+                    'id'   => $item->admin_verifikasi->id,
+                    'name' => $item->admin_verifikasi->name,
+                ] : null,
             ];
         }
         return $data;
@@ -273,7 +341,10 @@ class AduanMasyarakatRepository
             },
             'created_by_user',
             'updated_by_user',
-            'files'
+            'files',
+            'layanan_darurat',
+            'rt_verifikasi',
+            'admin_verifikasi'
         ]);
     }
 

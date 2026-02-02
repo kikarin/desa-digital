@@ -53,10 +53,10 @@ class LayananDarurat extends Model
     public function getKategoriLabelAttribute()
     {
         $labels = [
-            'polsek' => 'Polsek',
-            'puskesmas' => 'Puskesmas',
-            'pemadam_kebakaran' => 'Pemadam Kebakaran',
-            'rumah_sakit' => 'Rumah Sakit',
+            'bhabinkamtibmas' => 'Bhabinkamtibmas',
+            'mobil_siaga' => 'Mobil Siaga',
+            'pemadam_kebakaran' => 'Damkar',
+            'kantor_desa' => 'Kantor Desa',
         ];
 
         return $labels[$this->kategori] ?? $this->kategori;

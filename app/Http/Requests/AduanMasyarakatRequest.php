@@ -27,6 +27,8 @@ class AduanMasyarakatRequest extends FormRequest
             'files.*' => 'file|mimes:jpg,jpeg,png,mp4,mov,avi|max:10240', // Max 10MB
             'deleted_files' => 'nullable|array',
             'deleted_files.*' => 'exists:aduan_masyarakat_files,id',
+            'layanan_darurat_ids' => 'nullable|array',
+            'layanan_darurat_ids.*' => 'exists:layanan_darurat,id',
         ];
 
         if ($this->isMethod('patch') || $this->isMethod('put')) {

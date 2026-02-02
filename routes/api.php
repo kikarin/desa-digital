@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\PengajuanProposalController;
 use App\Http\Controllers\Api\ProgramBantuanController;
 use App\Http\Controllers\Api\BeritaPengumumanController;
 use App\Http\Controllers\Api\HouseController;
+use App\Http\Controllers\Api\ChatbotController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -67,6 +68,11 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     Route::get('/pengajuan-surat-rt', [PengajuanSuratController::class, 'indexRtPwa']);
     Route::get('/pengajuan-surat-rt/{id}', [PengajuanSuratController::class, 'showRtPwa']);
     Route::post('/pengajuan-surat-rt/{id}/verifikasi', [PengajuanSuratController::class, 'verifyRtPwa']);
+    
+    // Aduan Masyarakat - Verifikasi RT (PWA, khusus role RT)
+    Route::get('/aduan-masyarakat-rt', [AduanMasyarakatController::class, 'indexRtPwa']);
+    Route::get('/aduan-masyarakat-rt/{id}', [AduanMasyarakatController::class, 'showRtPwa']);
+    Route::post('/aduan-masyarakat-rt/{id}/verifikasi', [AduanMasyarakatController::class, 'verifyRtPwa']);
     
     // Pengajuan Proposal - Proposal Saya
     Route::get('/pengajuan-proposal/kategori', [PengajuanProposalController::class, 'getKategoriProposal']);

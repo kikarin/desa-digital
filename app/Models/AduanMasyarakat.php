@@ -28,11 +28,19 @@ class AduanMasyarakat extends Model
         'jenis_aduan',
         'alasan_melaporkan',
         'status',
+        'rt_verifikasi_id',
+        'rt_verifikasi_at',
+        'rt_catatan',
+        'admin_verifikasi_id',
+        'admin_verifikasi_at',
+        'admin_catatan',
     ];
 
     protected $casts = [
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
+        'rt_verifikasi_at' => 'datetime',
+        'admin_verifikasi_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
@@ -74,6 +82,21 @@ class AduanMasyarakat extends Model
     public function updated_by_user()
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    public function layanan_darurat()
+    {
+        return $this->belongsToMany(LayananDarurat::class, 'aduan_masyarakat_layanan_darurat', 'aduan_masyarakat_id', 'layanan_darurat_id');
+    }
+
+    public function rt_verifikasi()
+    {
+        return $this->belongsTo(User::class, 'rt_verifikasi_id');
+    }
+
+    public function admin_verifikasi()
+    {
+        return $this->belongsTo(User::class, 'admin_verifikasi_id');
     }
 }
 

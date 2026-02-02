@@ -34,5 +34,13 @@ return [
             'channel'              => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'), // Model terbaru yang tersedia
+        'timeout' => env('GEMINI_TIMEOUT', 10),
+        'max_tokens' => env('GEMINI_MAX_TOKENS', 500),
+        'temperature' => env('GEMINI_TEMPERATURE', 0.7),
+    ],
+    
 
 ];

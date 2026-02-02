@@ -24,7 +24,7 @@ class LayananDaruratRequest extends FormRequest
         $id = $this->route('id') ?? $this->route('layanan-darurat');
         
         return [
-            'kategori' => 'required|in:polsek,puskesmas,pemadam_kebakaran,rumah_sakit',
+            'kategori' => 'required|in:bhabinkamtibmas,mobil_siaga,pemadam_kebakaran,kantor_desa',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'title' => 'required|string|max:255',

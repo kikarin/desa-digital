@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ref, onMounted, watch } from 'vue';
 import { Search, MapPin, Navigation, X, Upload } from 'lucide-vue-next';
 import axios from 'axios';
@@ -29,12 +30,14 @@ const formData = ref({
     deskripsi_lokasi: props.initialData?.deskripsi_lokasi || '',
     jenis_aduan: props.initialData?.jenis_aduan || 'publik',
     alasan_melaporkan: props.initialData?.alasan_melaporkan || '',
+    layanan_darurat_ids: props.initialData?.layanan_darurat_ids || [],
 });
 
 const isLoading = ref(false);
 
 // Dropdown options
 const kategoriOptions = ref<Array<{ value: number; label: string }>>([]);
+const layananDaruratOptions = ref<Array<{ value: number; label: string; kategori: string }>>([]);
 
 // Files
 const files = ref<File[]>([]);
@@ -71,6 +74,24 @@ onMounted(async () => {
             type: file.file_type as 'foto' | 'video',
             name: file.file_name || 'File',
         }));
+    }
+
+    // Load layanan darurat
+    try {
+        const response = await axios.get('/api/pwa/layanan-darurat/kategori');
+        if (response.data?.success && response.data?.data) {
+            // Load semua layanan darurat untuk dipilih
+            const layananResponse = await axios.get('/api/pwa/layanan-darurat?per_page=-1');
+            if (layananResponse.data?.success && layananResponse.data?.data) {
+                layananDaruratOptions.value = layananResponse.data.data.map((item: any) => ({
+                    value: item.id,
+                    label: `${item.title} (${item.kategori_label})`,
+                    kategori: item.kategori_label,
+                }));
+            }
+        }
+    } catch (error) {
+        console.error('Gagal mengambil layanan darurat:', error);
     }
 });
 
@@ -162,6 +183,13 @@ const handleSave = () => {
     submitFormData.append('deskripsi_lokasi', formData.value.deskripsi_lokasi || '');
     submitFormData.append('jenis_aduan', formData.value.jenis_aduan);
     submitFormData.append('alasan_melaporkan', formData.value.alasan_melaporkan || '');
+    
+    // Append layanan darurat IDs
+    if (formData.value.layanan_darurat_ids && formData.value.layanan_darurat_ids.length > 0) {
+        formData.value.layanan_darurat_ids.forEach((id: number) => {
+            submitFormData.append('layanan_darurat_ids[]', String(id));
+        });
+    }
     
     // Append files
     files.value.forEach((file) => {
@@ -355,6 +383,44 @@ const handleSave = () => {
                         </button>
                         <p class="text-xs text-muted-foreground mt-1 truncate">{{ preview.name }}</p>
                     </div>
+                </div>
+            </CardContent>
+        </Card>
+
+        <!-- Layanan Darurat -->
+        <Card>
+            <CardHeader>
+                <CardTitle class="text-lg">Pilih Layanan Darurat</CardTitle>
+            </CardHeader>
+            <CardContent class="space-y-4">
+                <div>
+                    <Label>Layanan Darurat (Opsional)</Label>
+                    <p class="text-xs text-muted-foreground mb-3">
+                        Pilih layanan darurat yang ingin dihubungi terkait aduan ini
+                    </p>
+                    <div v-if="layananDaruratOptions.length > 0" class="space-y-2 max-h-60 overflow-y-auto border rounded-md p-3">
+                        <div
+                            v-for="option in layananDaruratOptions"
+                            :key="option.value"
+                            class="flex items-center space-x-2"
+                        >
+                            <Checkbox
+                                :id="`layanan-${option.value}`"
+                                :checked="formData.layanan_darurat_ids.includes(option.value)"
+                                @update:checked="(checked: boolean) => {
+                                    if (checked) {
+                                        formData.layanan_darurat_ids.push(option.value);
+                                    } else {
+                                        formData.layanan_darurat_ids = formData.layanan_darurat_ids.filter((id: number) => id !== option.value);
+                                    }
+                                }"
+                            />
+                            <Label :for="`layanan-${option.value}`" class="cursor-pointer text-sm">
+                                {{ option.label }}
+                            </Label>
+                        </div>
+                    </div>
+                    <p v-else class="text-sm text-muted-foreground">Memuat data layanan darurat...</p>
                 </div>
             </CardContent>
         </Card>

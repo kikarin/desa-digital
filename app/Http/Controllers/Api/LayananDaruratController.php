@@ -50,20 +50,20 @@ class LayananDaruratController extends Controller
         try {
             $kategoris = [
                 [
-                    'value' => 'polsek',
-                    'label' => 'Polsek',
+                    'value' => 'bhabinkamtibmas',
+                    'label' => 'Bhabinkam-tibmas',
                 ],
                 [
-                    'value' => 'puskesmas',
-                    'label' => 'Puskesmas',
-                ],
-                [
-                    'value' => 'rumah_sakit',
-                    'label' => 'RS',
+                    'value' => 'mobil_siaga',
+                    'label' => 'Mobil Siaga',
                 ],
                 [
                     'value' => 'pemadam_kebakaran',
                     'label' => 'Damkar',
+                ],
+                [
+                    'value' => 'kantor_desa',
+                    'label' => 'Kantor Desa',
                 ],
             ];
 

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Repositories\AduanMasyarakatRepository;
+use App\Models\UsersRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class AduanMasyarakatController extends Controller
 {
@@ -38,9 +40,15 @@ class AduanMasyarakatController extends Controller
             // Gunakan repository dengan filter by created_by = true
             $data = $this->repository->customIndex([], true);
             
+            // Convert Collection to array if needed
+            $aduanMasyarakat = $data['aduan_masyarakat'] ?? [];
+            if (is_object($aduanMasyarakat) && method_exists($aduanMasyarakat, 'toArray')) {
+                $aduanMasyarakat = $aduanMasyarakat->toArray();
+            }
+            
             return response()->json([
                 'success' => true,
-                'data' => $data['aduan_masyarakat'] ?? [],
+                'data' => $aduanMasyarakat,
                 'meta' => $data['meta'] ?? [],
             ]);
         } catch (\Exception $e) {
@@ -88,6 +96,9 @@ class AduanMasyarakatController extends Controller
                 ], 403);
             }
 
+            // Pastikan semua relasi ter-load
+            $item->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi']);
+            
             $data = ['item' => $item];
             $data = $this->repository->customShow($data, $item);
             
@@ -135,6 +146,8 @@ class AduanMasyarakatController extends Controller
                 'deskripsi_lokasi' => 'nullable|string',
                 'jenis_aduan' => 'required|in:publik,private',
                 'alasan_melaporkan' => 'nullable|string',
+                'layanan_darurat_ids' => 'nullable|array',
+                'layanan_darurat_ids.*' => 'exists:layanan_darurat,id',
                 'files' => 'nullable|array',
                 'files.*' => 'file|mimes:jpeg,jpg,png,gif,mp4,mov,avi|max:10240', // Max 10MB
             ]);
@@ -165,8 +178,17 @@ class AduanMasyarakatController extends Controller
 
             $data = $before['data'];
             
+            // Handle layanan_darurat_ids
+            $layananDaruratIds = $request->input('layanan_darurat_ids', []);
+            unset($data['layanan_darurat_ids']);
+
             // Create aduan
             $model = $this->repository->create($data);
+
+            // Attach layanan darurat
+            if (!empty($layananDaruratIds) && is_array($layananDaruratIds)) {
+                $model->layanan_darurat()->sync($layananDaruratIds);
+            }
 
             // Handle file upload jika ada
             if ($request->hasFile('files')) {
@@ -178,7 +200,8 @@ class AduanMasyarakatController extends Controller
             }
 
             // Reload dengan relasi
-            $model->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files']);
+            $model->refresh();
+            $model->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi']);
             $data = ['item' => $model];
             $data = $this->repository->customShow($data, $model);
 
@@ -341,6 +364,8 @@ class AduanMasyarakatController extends Controller
                 'deskripsi_lokasi' => 'nullable|string',
                 'jenis_aduan' => 'sometimes|required|in:publik,private',
                 'alasan_melaporkan' => 'nullable|string',
+                'layanan_darurat_ids' => 'nullable|array',
+                'layanan_darurat_ids.*' => 'exists:layanan_darurat,id',
                 'files' => 'nullable|array',
                 'files.*' => 'file|mimes:jpeg,jpg,png,gif,mp4,mov,avi|max:10240',
                 'deleted_files' => 'nullable|array',
@@ -389,8 +414,17 @@ class AduanMasyarakatController extends Controller
                 $data['deleted_files'] = $request->input('deleted_files', []);
             }
 
+            // Handle layanan_darurat_ids
+            $layananDaruratIds = $request->input('layanan_darurat_ids', []);
+            unset($data['layanan_darurat_ids']);
+
             // Update aduan (customDataCreateUpdate akan memproses deleted_files)
             $model = $this->repository->update($id, $data);
+
+            // Sync layanan darurat
+            if (isset($layananDaruratIds) && is_array($layananDaruratIds)) {
+                $model->layanan_darurat()->sync($layananDaruratIds);
+            }
 
             // Handle file upload jika ada
             if ($request->hasFile('files')) {
@@ -403,7 +437,7 @@ class AduanMasyarakatController extends Controller
 
             // Reload dengan relasi untuk mendapatkan data terbaru
             $model->refresh();
-            $model->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files']);
+            $model->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi']);
             $data = ['item' => $model];
             $data = $this->repository->customShow($data, $model);
 
@@ -513,6 +547,300 @@ class AduanMasyarakatController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data kategori aduan',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * List aduan untuk verifikasi RT (PWA)
+     *
+     * Hanya menampilkan aduan dari warga yang berada di RT user yang login (role RT, role_id = 36).
+     */
+    public function indexRtPwa(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak terautentikasi',
+                ], 401);
+            }
+
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) // RT
+                ->whereNotNull('rt_id')
+                ->first();
+
+            if (!$userRole || !$userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun ini tidak memiliki akses sebagai RT atau belum terhubung dengan data RT.',
+                ], 403);
+            }
+
+            // Filter aduan berdasarkan RT (melalui created_by -> users -> residents -> families -> houses -> rt_id)
+            $query = \App\Models\AduanMasyarakat::with(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi'])
+                ->whereHas('created_by_user', function ($q) use ($userRole) {
+                    $q->whereHas('resident', function ($rq) use ($userRole) {
+                        $rq->whereHas('family', function ($fq) use ($userRole) {
+                            $fq->whereHas('house', function ($hq) use ($userRole) {
+                                $hq->where('rt_id', $userRole->rt_id);
+                            });
+                        });
+                    });
+                });
+
+            // Filter by status jika ada
+            if ($request->has('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // Search
+            if ($request->has('search')) {
+                $searchTerm = $request->search;
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('judul', 'like', '%' . $searchTerm . '%')
+                        ->orWhere('detail_aduan', 'like', '%' . $searchTerm . '%');
+                });
+            }
+
+            // Pagination
+            $perPage = (int) $request->input('per_page', 10);
+            $page = (int) $request->input('page', 0);
+            $pageForLaravel = $page < 1 ? 1 : $page + 1;
+            
+            if ($perPage === -1) {
+                $items = $query->orderBy('id', 'desc')->get();
+                $transformedData = $items->map(function ($item) {
+                    $data = $this->repository->customShow([], $item);
+                    return $data['item'] ?? $item;
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $transformedData,
+                    'meta' => [
+                        'total' => $transformedData->count(),
+                        'current_page' => 1,
+                        'per_page' => -1,
+                    ],
+                ]);
+            } else {
+                $items = $query->orderBy('id', 'desc')->paginate($perPage, ['*'], 'page', $pageForLaravel);
+                $transformedData = $items->getCollection()->map(function ($item) {
+                    $data = $this->repository->customShow([], $item);
+                    return $data['item'] ?? $item;
+                });
+
+                return response()->json([
+                    'success' => true,
+                    'data' => $transformedData,
+                    'meta' => [
+                        'total' => $items->total(),
+                        'current_page' => $items->currentPage(),
+                        'per_page' => $items->perPage(),
+                    ],
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data aduan untuk RT',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Detail aduan untuk verifikasi RT (PWA)
+     */
+    public function showRtPwa(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak terautentikasi',
+                ], 401);
+            }
+
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) // RT
+                ->whereNotNull('rt_id')
+                ->first();
+
+            if (!$userRole || !$userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun ini tidak memiliki akses sebagai RT atau belum terhubung dengan data RT.',
+                ], 403);
+            }
+
+            $aduan = $this->repository->getById($id);
+
+            if (!$aduan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan tidak ditemukan',
+                ], 404);
+            }
+
+            // Cek apakah aduan dibuat oleh warga di RT yang sama
+            $createdByUser = $aduan->created_by_user;
+            if (!$createdByUser || !$createdByUser->resident_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan ini tidak memiliki data warga yang valid.',
+                ], 403);
+            }
+
+            $resident = \App\Models\Residents::find($createdByUser->resident_id);
+            if (!$resident || !$resident->family || !$resident->family->house || $resident->family->house->rt_id != $userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan ini bukan dari warga di RT Anda.',
+                ], 403);
+            }
+
+            // Pastikan semua relasi ter-load
+            $aduan->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'updated_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi']);
+            
+            $data = $this->repository->customShow([], $aduan);
+
+            return response()->json([
+                'success' => true,
+                'data' => $data['item'] ?? $aduan,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail aduan untuk RT',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Verifikasi aduan oleh RT (PWA)
+     *
+     * RT dapat menyetujui atau membatalkan aduan warga di RT-nya.
+     */
+    public function verifyRtPwa(Request $request, $id)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'User tidak terautentikasi',
+                ], 401);
+            }
+
+            $userRole = UsersRole::where('users_id', $user->id)
+                ->where('role_id', 36) // RT
+                ->whereNotNull('rt_id')
+                ->first();
+
+            if (!$userRole || !$userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akun ini tidak memiliki akses sebagai RT atau belum terhubung dengan data RT.',
+                ], 403);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'status' => 'required|in:diverifikasi_rt,dibatalkan',
+                'rt_catatan' => 'nullable|string|max:1000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            // Validasi catatan wajib jika dibatalkan
+            if ($request->status === 'dibatalkan' && empty($request->rt_catatan)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Catatan wajib diisi jika aduan dibatalkan',
+                    'errors' => ['rt_catatan' => ['Catatan wajib diisi jika aduan dibatalkan']],
+                ], 422);
+            }
+
+            $aduan = $this->repository->getById($id);
+
+            if (!$aduan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan tidak ditemukan',
+                ], 404);
+            }
+
+            // Cek apakah aduan dibuat oleh warga di RT yang sama
+            $createdByUser = $aduan->created_by_user;
+            if (!$createdByUser || !$createdByUser->resident_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan ini tidak memiliki data warga yang valid.',
+                ], 403);
+            }
+
+            $resident = \App\Models\Residents::find($createdByUser->resident_id);
+            if (!$resident || !$resident->family || !$resident->family->house || $resident->family->house->rt_id != $userRole->rt_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan ini bukan dari warga di RT Anda.',
+                ], 403);
+            }
+
+            if ($aduan->status !== 'menunggu_verifikasi') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aduan ini sudah diverifikasi atau tidak dapat diverifikasi.',
+                ], 400);
+            }
+
+            DB::beginTransaction();
+
+            $dataUpdate = [
+                'status' => $request->input('status'),
+                'rt_verifikasi_id' => $user->id,
+                'rt_verifikasi_at' => now(),
+                'rt_catatan' => $request->input('rt_catatan'),
+            ];
+
+            if ($request->status === 'dibatalkan') {
+                $dataUpdate['alasan_melaporkan'] = $request->input('rt_catatan');
+            }
+
+            $aduan->update($dataUpdate);
+
+            DB::commit();
+
+            // Reload dengan relasi
+            $aduan->refresh();
+            $aduan->load(['kategori_aduan', 'kecamatan', 'desa', 'created_by_user', 'files', 'layanan_darurat', 'rt_verifikasi', 'admin_verifikasi']);
+            $data = $this->repository->customShow([], $aduan);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Aduan berhasil diverifikasi',
+                'data' => $data['item'] ?? $aduan,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memverifikasi aduan',
                 'error' => $e->getMessage(),
             ], 500);
         }
