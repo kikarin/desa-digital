@@ -28,6 +28,12 @@ class Residents extends Model
         'tempat_lahir',
         'tanggal_lahir',
         'jenis_kelamin',
+        'family_status',
+        'family_status_other',
+        'status_kawin',
+        'pendidikan',
+        'agama',
+        'pekerjaan',
         'status_id',
         'status_note',
     ];

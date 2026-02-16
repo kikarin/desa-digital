@@ -21,6 +21,7 @@ const breadcrumbs = [
 
 const columns = [
     { key: 'nomor_rt', label: 'Nomor RT', searchable: true, orderable: true, visible: true },
+    { key: 'alamat', label: 'Alamat / Kampung', searchable: true, orderable: true, visible: true },
     { key: 'rw', label: 'RW', searchable: true, orderable: true, visible: true },
     { key: 'desa', label: 'Desa', searchable: true, orderable: true, visible: true },
     { key: 'kecamatan', label: 'Kecamatan', searchable: true, orderable: true, visible: true },

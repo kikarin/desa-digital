@@ -33,6 +33,13 @@ const formInputs = computed(() => [
         help: 'Masukkan nomor RT, contoh: 01',
     },
     {
+        name: 'alamat',
+        label: 'Alamat / Kampung',
+        type: 'text' as const,
+        placeholder: 'Nama kampung atau alamat wilayah RT',
+        required: true,
+    },
+    {
         name: 'keterangan',
         label: 'Keterangan',
         type: 'textarea' as const,

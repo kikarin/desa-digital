@@ -10,6 +10,7 @@ const props = defineProps<{
         id: number;
         rw_id: number;
         nomor_rt: string;
+        alamat: string | null;
         keterangan: string | null;
         rw: {
             id: number;
@@ -46,6 +47,7 @@ const breadcrumbs = [
 const fields = [
     { label: 'Nomor RT', value: props.item.nomor_rt },
     { label: 'RW', value: `${props.item.rw.nomor_rw} - ${props.item.rw.desa}, ${props.item.rw.kecamatan}, ${props.item.rw.kabupaten}` },
+    { label: 'Alamat / Kampung', value: props.item.alamat || '-' },
     { label: 'Keterangan', value: props.item.keterangan || '-' },
 ];
 
@@ -86,7 +88,7 @@ const handleDelete = () => {
         :breadcrumbs="breadcrumbs"
         :fields="fields"
         :action-fields="actionFields"
-        :back-url="'/data-desa/rts'"
+        :back-url="'/data-warga/rts'"
         :on-edit="handleEdit"
         :on-delete="handleDelete"
     >

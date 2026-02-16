@@ -23,6 +23,7 @@ class Rts extends Model
     protected $fillable = [
         'rw_id',
         'nomor_rt',
+        'alamat',
         'keterangan',
         'boundary',
     ];

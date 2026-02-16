@@ -28,6 +28,8 @@ class ResidentsRepository
         $query = $this->model->with('family.house.rt.rw', 'status')
             ->select('residents.id', 'residents.family_id', 'residents.nik', 'residents.nama', 
                      'residents.tempat_lahir', 'residents.tanggal_lahir', 'residents.jenis_kelamin',
+                     'residents.family_status', 'residents.family_status_other',
+                     'residents.status_kawin', 'residents.pendidikan', 'residents.agama', 'residents.pekerjaan',
                      'residents.status_id', 'residents.status_note',
                      'families.no_kk', 'houses.nomor_rumah', 'rts.nomor_rt', 'rws.nomor_rw', 
                      'rws.desa', 'rws.kecamatan', 'rws.kabupaten', 'resident_statuses.name as status_name')
@@ -70,6 +72,7 @@ class ResidentsRepository
                 'nama'         => 'residents.nama',
                 'tanggal_lahir' => 'residents.tanggal_lahir',
                 'jenis_kelamin' => 'residents.jenis_kelamin',
+                'status_kawin'  => 'residents.status_kawin',
                 'status'       => 'resident_statuses.name',
                 'no_kk'        => 'families.no_kk',
                 'nomor_rumah'  => 'houses.nomor_rumah',
@@ -96,6 +99,12 @@ class ResidentsRepository
                     'tempat_lahir'  => $resident->tempat_lahir,
                     'tanggal_lahir' => $resident->tanggal_lahir,
                     'jenis_kelamin' => $resident->jenis_kelamin,
+                    'family_status' => $resident->family_status,
+                    'family_status_other' => $resident->family_status_other,
+                    'status_kawin'  => $resident->status_kawin,
+                    'pendidikan'    => $resident->pendidikan,
+                    'agama'         => $resident->agama,
+                    'pekerjaan'     => $resident->pekerjaan,
                     'status'        => $resident->status_name,
                     'no_kk'         => $resident->no_kk,
                     'nomor_rumah'   => $resident->nomor_rumah,
@@ -129,6 +138,12 @@ class ResidentsRepository
                 'tempat_lahir'  => $resident->tempat_lahir,
                 'tanggal_lahir' => $resident->tanggal_lahir,
                 'jenis_kelamin' => $resident->jenis_kelamin,
+                'family_status' => $resident->family_status,
+                'family_status_other' => $resident->family_status_other,
+                'status_kawin'  => $resident->status_kawin,
+                'pendidikan'    => $resident->pendidikan,
+                'agama'         => $resident->agama,
+                'pekerjaan'     => $resident->pekerjaan,
                 'status'        => $resident->status_name,
                 'no_kk'         => $resident->no_kk,
                 'nomor_rumah'   => $resident->nomor_rumah,
@@ -227,12 +242,43 @@ class ResidentsRepository
             ];
         })->toArray();
         
+        $familyStatusMap = [
+            1 => 'Kepala Keluarga',
+            2 => 'Istri',
+            3 => 'Anak',
+            4 => 'Tambahan (Lainnya)',
+        ];
+
+        $statusKawinMap = [
+            0 => 'Tidak Diketahui',
+            1 => 'Belum Kawin',
+            2 => 'Kawin',
+            3 => 'Cerai',
+        ];
+
+        $familyStatusText = $item->family_status !== null
+            ? ($familyStatusMap[$item->family_status] ?? '-')
+            : '-';
+
+        if ((int) $item->family_status === 4 && $item->family_status_other) {
+            $familyStatusText .= ' - ' . $item->family_status_other;
+        }
+
+        $statusKawinText = $item->status_kawin !== null
+            ? ($statusKawinMap[$item->status_kawin] ?? '-')
+            : '-';
+
         $fields = [
             ['label' => 'NIK', 'value' => $item->nik ?? '-'],
             ['label' => 'Nama', 'value' => $item->nama ?? '-'],
             ['label' => 'Tempat Lahir', 'value' => $item->tempat_lahir ?? '-'],
             ['label' => 'Tanggal Lahir', 'value' => $item->tanggal_lahir ? date('d-m-Y', strtotime($item->tanggal_lahir)) : '-'],
             ['label' => 'Jenis Kelamin', 'value' => ($item->jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan') ?? '-'],
+            ['label' => 'Status Keluarga', 'value' => $familyStatusText],
+            ['label' => 'Status Kawin', 'value' => $statusKawinText],
+            ['label' => 'Pendidikan', 'value' => $item->pendidikan ?? '-'],
+            ['label' => 'Agama', 'value' => $item->agama ?? '-'],
+            ['label' => 'Pekerjaan', 'value' => $item->pekerjaan ?? '-'],
             ['label' => 'Status', 'value' => $item->status->name ?? '-'],
             ['label' => 'Status Note', 'value' => $item->status_note ?? '-'],
             ['label' => 'Kartu Keluarga', 'value' => ($item->family->no_kk ?? '-')],

@@ -17,6 +17,7 @@ class RtsRequest extends FormRequest
         $rules = [
             'rw_id'     => 'required|exists:rws,id',
             'nomor_rt'  => 'required|string|max:10',
+            'alamat'    => 'required|string|max:255',
             'keterangan' => 'nullable|string',
         ];
 

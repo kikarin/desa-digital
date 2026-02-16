@@ -13,10 +13,14 @@ const props = defineProps<{
 }>();
 
 const selectedStatusId = ref<number | null>(props.initialData?.status_id || null);
+const selectedFamilyStatus = ref<number | null>(props.initialData?.family_status || null);
 
 watch(() => props.initialData, (newVal) => {
     if (newVal?.status_id) {
         selectedStatusId.value = newVal.status_id;
+    }
+    if (newVal?.family_status) {
+        selectedFamilyStatus.value = newVal.family_status;
     }
 }, { immediate: true, deep: true });
 
@@ -32,6 +36,8 @@ const isStatusPindah = computed(() => {
 const isStatusMeninggal = computed(() => {
     return selectedStatus.value?.label?.toUpperCase() === 'MENINGGAL';
 });
+
+const showFamilyStatusOther = computed(() => selectedFamilyStatus.value === 4);
 
 const formInputs = computed(() => {
     const baseInputs = [
@@ -84,6 +90,64 @@ const formInputs = computed(() => {
                 { value: 'L', label: 'Laki-laki' },
                 { value: 'P', label: 'Perempuan' },
             ],
+        },
+        {
+            name: 'family_status',
+            label: 'Status Keluarga',
+            type: 'select' as const,
+            placeholder: 'Pilih status dalam keluarga',
+            required: true,
+            options: [
+                { value: 1, label: 'Kepala Keluarga' },
+                { value: 2, label: 'Istri' },
+                { value: 3, label: 'Anak' },
+                { value: 4, label: 'Tambahan (Lainnya)' },
+            ],
+        },
+        ...(showFamilyStatusOther.value
+            ? [
+                  {
+                      name: 'family_status_other',
+                      label: 'Keterangan Status Keluarga',
+                      type: 'text' as const,
+                      placeholder: 'Isi jika memilih status Tambahan/Lainnya',
+                      required: false,
+                  },
+              ]
+            : []),
+        {
+            name: 'status_kawin',
+            label: 'Status Kawin',
+            type: 'select' as const,
+            placeholder: 'Pilih status kawin',
+            required: true,
+            options: [
+                { value: 0, label: 'Tidak Diketahui' },
+                { value: 1, label: 'Belum Kawin' },
+                { value: 2, label: 'Kawin' },
+                { value: 3, label: 'Cerai' },
+            ],
+        },
+        {
+            name: 'pendidikan',
+            label: 'Pendidikan',
+            type: 'text' as const,
+            placeholder: 'Contoh: SD, SMP, SMA, S1',
+            required: false,
+        },
+        {
+            name: 'agama',
+            label: 'Agama',
+            type: 'text' as const,
+            placeholder: 'Contoh: Islam, Kristen, Hindu',
+            required: false,
+        },
+        {
+            name: 'pekerjaan',
+            label: 'Pekerjaan',
+            type: 'text' as const,
+            placeholder: 'Contoh: Petani, Karyawan, Wiraswasta',
+            required: false,
         },
         {
             name: 'status_id',
@@ -186,7 +250,10 @@ const formInputs = computed(() => {
 
 const handleFieldUpdated = (field: { field: string; value: any }) => {
     if (field.field === 'status_id') {
-        selectedStatusId.value = field.value;
+        selectedStatusId.value = Number(field.value);
+    }
+    if (field.field === 'family_status') {
+        selectedFamilyStatus.value = Number(field.value);
     }
 };
 
@@ -195,6 +262,12 @@ const handleSave = (data: Record<string, any>) => {
         ...data,
         family_id: Number(data.family_id),
         status_id: Number(data.status_id),
+        family_status: data.family_status !== undefined && data.family_status !== null
+            ? Number(data.family_status)
+            : null,
+        status_kawin: data.status_kawin !== undefined && data.status_kawin !== null
+            ? Number(data.status_kawin)
+            : null,
     };
 
     if (props.mode === 'edit' && props.initialData?.id) {

@@ -23,9 +23,66 @@
         { title: 'Warga', href: '/data-warga/residents' },
     ];
     
+    const maskNumber = (value: string | number | null | undefined) => {
+        if (!value) return '-';
+        const str = String(value);
+        if (str.length <= 4) return '*'.repeat(str.length);
+        const visible = str.slice(-4);
+        const masked = '*'.repeat(str.length - 4);
+        return masked + visible;
+    };
+    
     const columns = [
-        { key: 'nik', label: 'NIK', searchable: true, orderable: true, visible: true },
-        { key: 'no_kk', label: 'No. KK', searchable: true, orderable: true, visible: true },
+        {
+            key: 'nik',
+            label: 'NIK',
+            searchable: true,
+            orderable: true,
+            visible: true,
+            format: (row: any) => {
+                const full = row.nik ? String(row.nik) : '';
+                if (!full) return '-';
+                const masked = maskNumber(full);
+                return `<button
+                    type="button"
+                    class="font-mono text-xs sm:text-sm px-2 py-1 rounded bg-muted hover:bg-accent transition whitespace-nowrap"
+                    data-state="masked"
+                    data-full="${full}"
+                    data-masked="${masked}"
+                    title="Klik untuk tampil/sembunyikan NIK"
+                    onclick="(function(el){ 
+                        const isMasked = el.getAttribute('data-state') !== 'unmasked'; 
+                        el.textContent = isMasked ? el.getAttribute('data-full') : el.getAttribute('data-masked'); 
+                        el.setAttribute('data-state', isMasked ? 'unmasked' : 'masked'); 
+                    })(this)"
+                >${masked}</button>`;
+            },
+        },
+        {
+            key: 'no_kk',
+            label: 'No. KK',
+            searchable: true,
+            orderable: true,
+            visible: true,
+            format: (row: any) => {
+                const full = row.no_kk ? String(row.no_kk) : '';
+                if (!full) return '-';
+                const masked = maskNumber(full);
+                return `<button
+                    type="button"
+                    class="font-mono text-xs sm:text-sm px-2 py-1 rounded bg-muted hover:bg-accent transition whitespace-nowrap"
+                    data-state="masked"
+                    data-full="${full}"
+                    data-masked="${masked}"
+                    title="Klik untuk tampil/sembunyikan No. KK"
+                    onclick="(function(el){ 
+                        const isMasked = el.getAttribute('data-state') !== 'unmasked'; 
+                        el.textContent = isMasked ? el.getAttribute('data-full') : el.getAttribute('data-masked'); 
+                        el.setAttribute('data-state', isMasked ? 'unmasked' : 'masked'); 
+                    })(this)"
+                >${masked}</button>`;
+            },
+        },
         { key: 'nama', label: 'Nama', searchable: true, orderable: true, visible: true },
         { key: 'tempat_lahir', label: 'Tempat Lahir', searchable: true, orderable: false, visible: true },
         { key: 'tanggal_lahir', label: 'Tanggal Lahir', searchable: false, orderable: true, visible: true },

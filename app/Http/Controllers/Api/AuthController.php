@@ -19,6 +19,59 @@ class AuthController extends Controller
     protected $roleWargaId = 37; // Role ID untuk Warga/Resident
     protected $allowedPwaRoleIds = [37, 36, 35]; 
 
+    /**
+     * Transform data resident untuk response API PWA.
+     */
+    protected function transformResidentForApi(?Residents $resident): ?array
+    {
+        if (!$resident) {
+            return null;
+        }
+
+        $familyStatusMap = [
+            1 => 'Kepala Keluarga',
+            2 => 'Istri',
+            3 => 'Anak',
+            4 => 'Tambahan (Lainnya)',
+        ];
+
+        $statusKawinMap = [
+            0 => 'Tidak Diketahui',
+            1 => 'Belum Kawin',
+            2 => 'Kawin',
+            3 => 'Cerai',
+        ];
+
+        $familyStatusText = null;
+        if ($resident->family_status !== null) {
+            $familyStatusText = $familyStatusMap[$resident->family_status] ?? null;
+            if ((int) $resident->family_status === 4 && $resident->family_status_other) {
+                $familyStatusText = trim(($familyStatusText ?: 'Tambahan (Lainnya)') . ' - ' . $resident->family_status_other);
+            }
+        }
+
+        $statusKawinText = null;
+        if ($resident->status_kawin !== null) {
+            $statusKawinText = $statusKawinMap[$resident->status_kawin] ?? null;
+        }
+
+        return [
+            'id'                  => $resident->id,
+            'nik'                 => $resident->nik,
+            'nama'                => $resident->nama,
+            'tempat_lahir'        => $resident->tempat_lahir,
+            'tanggal_lahir'       => $resident->tanggal_lahir,
+            'jenis_kelamin'       => $resident->jenis_kelamin,
+            'family_status'       => $resident->family_status,
+            'family_status_text'  => $familyStatusText,
+            'status_kawin'        => $resident->status_kawin,
+            'status_kawin_text'   => $statusKawinText,
+            'pendidikan'          => $resident->pendidikan,
+            'agama'               => $resident->agama,
+            'pekerjaan'           => $resident->pekerjaan,
+        ];
+    }
+
     public function __construct(UsersRoleRepository $usersRoleRepository)
     {
         $this->usersRoleRepository = $usersRoleRepository;
@@ -88,6 +141,7 @@ class AuthController extends Controller
 
             // Load relasi yang diperlukan
             $user->load(['resident', 'role']);
+            $residentData = $this->transformResidentForApi($user->resident);
 
             return response()->json([
                 'success' => true,
@@ -98,11 +152,7 @@ class AuthController extends Controller
                         'name'          => $user->name,
                         'email'         => $user->email,
                         'resident_id'   => $user->resident_id,
-                        'resident'      => $user->resident ? [
-                            'id'   => $user->resident->id,
-                            'nik'  => $user->resident->nik,
-                            'nama' => $user->resident->nama,
-                        ] : null,
+                        'resident'      => $residentData,
                         'role'          => $user->role ? [
                             'id'   => $user->role->id,
                             'name' => $user->role->name,
@@ -199,6 +249,7 @@ class AuthController extends Controller
 
             // Load relasi yang diperlukan
             $user->load(['resident', 'role']);
+            $residentData = $this->transformResidentForApi($user->resident);
 
             return response()->json([
                 'success' => true,
@@ -209,14 +260,7 @@ class AuthController extends Controller
                         'name'          => $user->name,
                         'email'         => $user->email,
                         'resident_id'   => $user->resident_id,
-                        'resident'      => $user->resident ? [
-                            'id'            => $user->resident->id,
-                            'nik'           => $user->resident->nik,
-                            'nama'          => $user->resident->nama,
-                            'tempat_lahir'  => $user->resident->tempat_lahir,
-                            'tanggal_lahir' => $user->resident->tanggal_lahir,
-                            'jenis_kelamin' => $user->resident->jenis_kelamin,
-                        ] : null,
+                        'resident'      => $residentData,
                         'role'          => $user->role ? [
                             'id'   => $user->role->id,
                             'name' => $user->role->name,
@@ -286,6 +330,7 @@ class AuthController extends Controller
 
             // Load relasi yang diperlukan
             $user->load(['resident', 'role']);
+            $residentData = $this->transformResidentForApi($user->resident);
 
             return response()->json([
                 'success' => true,
@@ -295,14 +340,7 @@ class AuthController extends Controller
                         'name'          => $user->name,
                         'email'         => $user->email,
                         'resident_id'   => $user->resident_id,
-                        'resident'      => $user->resident ? [
-                            'id'            => $user->resident->id,
-                            'nik'           => $user->resident->nik,
-                            'nama'          => $user->resident->nama,
-                            'tempat_lahir'  => $user->resident->tempat_lahir,
-                            'tanggal_lahir' => $user->resident->tanggal_lahir,
-                            'jenis_kelamin' => $user->resident->jenis_kelamin,
-                        ] : null,
+                        'resident'      => $residentData,
                         'role'          => $user->role ? [
                             'id'   => $user->role->id,
                             'name' => $user->role->name,
@@ -376,15 +414,49 @@ class AuthController extends Controller
                 $noKk = $resident->family->no_kk;
             }
 
+        $familyStatusMap = [
+            1 => 'Kepala Keluarga',
+            2 => 'Istri',
+            3 => 'Anak',
+            4 => 'Tambahan (Lainnya)',
+        ];
+
+        $statusKawinMap = [
+            0 => 'Tidak Diketahui',
+            1 => 'Belum Kawin',
+            2 => 'Kawin',
+            3 => 'Cerai',
+        ];
+
+        $familyStatusText = null;
+        if ($resident->family_status !== null) {
+            $familyStatusText = $familyStatusMap[$resident->family_status] ?? null;
+            if ((int) $resident->family_status === 4 && $resident->family_status_other) {
+                $familyStatusText = trim(($familyStatusText ?: 'Tambahan (Lainnya)') . ' - ' . $resident->family_status_other);
+            }
+        }
+
+        $statusKawinText = null;
+        if ($resident->status_kawin !== null) {
+            $statusKawinText = $statusKawinMap[$resident->status_kawin] ?? null;
+        }
+
             return response()->json([
                 'success' => true,
                 'data'    => [
-                    'nik'            => $resident->nik,
-                    'nama'           => $resident->nama,
-                    'tempat_lahir'   => $resident->tempat_lahir,
-                    'tanggal_lahir'  => $tanggalLahir,
-                    'jenis_kelamin'  => $jenisKelamin,
-                    'kartu_keluarga' => $noKk,
+                'nik'                    => $resident->nik,
+                'nama'                   => $resident->nama,
+                'tempat_lahir'           => $resident->tempat_lahir,
+                'tanggal_lahir'          => $tanggalLahir,
+                'jenis_kelamin'          => $jenisKelamin,
+                'kartu_keluarga'         => $noKk,
+                'family_status'          => $resident->family_status,
+                'family_status_text'     => $familyStatusText,
+                'status_kawin'           => $resident->status_kawin,
+                'status_kawin_text'      => $statusKawinText,
+                'pendidikan'             => $resident->pendidikan,
+                'agama'                  => $resident->agama,
+                'pekerjaan'              => $resident->pekerjaan,
                 ],
             ]);
         } catch (\Exception $e) {

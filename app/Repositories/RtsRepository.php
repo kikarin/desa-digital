@@ -21,7 +21,7 @@ class RtsRepository
     public function customIndex($data)
     {
         $query = $this->model->with('rw')
-            ->select('rts.id', 'rts.rw_id', 'rts.nomor_rt', 'rts.keterangan', 'rts.boundary', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
+            ->select('rts.id', 'rts.rw_id', 'rts.nomor_rt', 'rts.alamat', 'rts.keterangan', 'rts.boundary', 'rws.nomor_rw', 'rws.desa', 'rws.kecamatan', 'rws.kabupaten')
             ->leftJoin('rws', 'rts.rw_id', '=', 'rws.id');
 
         if (request('filter_rw_id')) {
@@ -32,6 +32,7 @@ class RtsRepository
             $searchTerm = request('search');
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('rts.nomor_rt', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('rts.alamat', 'like', '%' . $searchTerm . '%')
                     ->orWhere('rts.keterangan', 'like', '%' . $searchTerm . '%')
                     ->orWhere('rws.nomor_rw', 'like', '%' . $searchTerm . '%')
                     ->orWhere('rws.desa', 'like', '%' . $searchTerm . '%')
@@ -44,6 +45,7 @@ class RtsRepository
             $order = request('order', 'asc');
             $sortMapping = [
                 'nomor_rt'  => 'rts.nomor_rt',
+                'alamat'    => 'rts.alamat',
                 'rw'        => 'rws.nomor_rw',
                 'desa'      => 'rws.desa',
                 'kecamatan' => 'rws.kecamatan',
@@ -71,6 +73,7 @@ class RtsRepository
                     'nomor_rt'   => $rt->nomor_rt,
                     'rw_id'      => $rt->rw_id,
                     'rw'         => $rt->nomor_rw . ' - ' . $rt->desa,
+                    'alamat'     => $rt->alamat,
                     'desa'       => $rt->desa,
                     'kecamatan'  => $rt->kecamatan,
                     'kabupaten'  => $rt->kabupaten,
@@ -109,6 +112,7 @@ class RtsRepository
                 'nomor_rt'   => $rt->nomor_rt,
                 'rw_id'      => $rt->rw_id,
                 'rw'         => $rt->nomor_rw . ' - ' . $rt->desa,
+                'alamat'     => $rt->alamat,
                 'desa'       => $rt->desa,
                 'kecamatan'  => $rt->kecamatan,
                 'kabupaten'  => $rt->kabupaten,
