@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ProgramBantuanController;
 use App\Http\Controllers\Api\BeritaPengumumanController;
 use App\Http\Controllers\Api\HouseController;
 use App\Http\Controllers\Api\ChatbotController;
+use App\Http\Controllers\Api\PushNotificationController;
 use App\Http\Controllers\UsersMenuController;
 use App\Http\Controllers\UsersController;
 
@@ -40,6 +41,9 @@ Route::prefix('pwa')->group(function () {
     Route::get('/berita-pengumuman/tipe', [BeritaPengumumanController::class, 'getTipe']);
     Route::get('/berita-pengumuman', [BeritaPengumumanController::class, 'index']);
     Route::get('/berita-pengumuman/{id}', [BeritaPengumumanController::class, 'show']);
+    
+    // Push Notification - VAPID Key (public, tidak perlu auth)
+    Route::get('/push/vapid-key', [PushNotificationController::class, 'getVapidPublicKey']);
 });
 
 // Protected routes untuk PWA (perlu auth)
@@ -92,6 +96,10 @@ Route::middleware('auth:sanctum')->prefix('pwa')->group(function () {
     Route::get('/rumah-saya', [HouseController::class, 'getMyHouse']);
     Route::post('/rumah-saya/validate-nomor-rumah', [HouseController::class, 'validateNomorRumah']);
     Route::post('/rumah-saya/update', [HouseController::class, 'updateMyHouse']); // POST untuk support multipart/form-data dengan multiple foto
+    
+    // Push Notification routes (perlu auth)
+    Route::post('/push/subscribe', [PushNotificationController::class, 'subscribe']);
+    Route::post('/push/unsubscribe', [PushNotificationController::class, 'unsubscribe']);
 });
 
 // Existing routes
