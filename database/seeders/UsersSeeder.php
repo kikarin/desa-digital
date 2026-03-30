@@ -24,7 +24,7 @@ class UsersSeeder extends Seeder
         $listData = array_merge($listData, [
             [
                 'name'                 => 'Imran',
-                'email'                => 'superadmin@gmail.com',
+                'email'                => 'digitaldesagaluga@gmail.com',
                 'email_verified_at'    => null,
                 'tanggal_lahir'        => null,
                 'no_hp'                => '08512312311',
